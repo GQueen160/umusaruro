@@ -1,6 +1,6 @@
 # Pipelines run on merge requests and on pushes to dev and main.
 # Feature-branch pushes do not, so CI minutes stay on the reviews.
-# Phase 1 checks that the evidence contract and its generator are in the tree.
+# The job checks the evidence contract and the Season A cell file.
 # Application jobs are added when the Django project exists.
 
 stages:
@@ -21,6 +21,7 @@ evidence:
   stage: test
   image: python:3.12-slim
   script:
-    - python -m py_compile docs/build_evidence_contract.py
+    - python -m py_compile docs/build_evidence_contract.py tools/transcribe_season_a.py umusaruro/cells.py
+    - python -m unittest tests.test_cells
     - test -f docs/Umusaruro-evidence-contract.docx
     - test -f docs/Umusaruro-evidence-contract.pdf
