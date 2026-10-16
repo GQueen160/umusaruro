@@ -1,13 +1,106 @@
 # Umusaruro
 
-District maize action sheet for the NISR 2026 Big Data Hackathon, agriculture track.
+Umusaruro is a district maize action sheet for a district agronomist and a planner at the Ministry of Agriculture and Animal Resources. The name is the Kinyarwanda word for harvest.
 
-The product contract is [docs/Umusaruro-evidence-contract.pdf](docs/Umusaruro-evidence-contract.pdf). A screen may show a number only when that contract names its survey, table, and year.
+For one district, the sheet will show Season A 2026 maize yield against the PSTA 5 milestones, then the lever the published tables support: irrigation, or all-crop improved seed. Inorganic fertilizer is named on the same sheet when that table lags. The reader does not type figures into the system.
 
-Season A 2026 cells are in `data/season_a_2026/cells.csv`. A blank value is empty. It is not zero. `checked` stays false until a second person signs the cell against the printed page.
+This is the agriculture track of the NISR 2026 Big Data Hackathon. A submission is a public Git repository, a deployed application, and documentation. The deadline is 23:59 on 30 October 2026.
+
+## The contract
+
+[docs/Umusaruro-evidence-contract.pdf](docs/Umusaruro-evidence-contract.pdf) locks the product. The same text is in [docs/Umusaruro-evidence-contract.docx](docs/Umusaruro-evidence-contract.docx). A number may appear on a screen only when that contract names its survey, table, and year.
+
+The contract also says what this project will not claim: a maize variety, a satisfaction score, a learned seed-soil-fertilizer score, a district store, a national rate copied onto a district, or a re-estimate of the NST2 irrigated-hectare total. Table 20 is all-crop improved seed. It is not the maize seed rate. Maize seed, 64.3% improved, is Table 21 and has no district column.
+
+PSTA 5 maize milestones, tonnes per hectare, are baseline 2023 = 1.70, then 1.87, 2.06, 2.26, 2.49, and 2.74. The figure 2.26 is the 2026/27 column. Season A 2026, all farms, is 1,994 kg/ha.
+
+To regenerate the contract from this repository:
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install python-docx fpdf2
+.venv/bin/python docs/build_evidence_contract.py
+```
+
+## Data
+
+`data/season_a_2026/cells.csv` holds the transcribed Season A 2026 cells for Tables 13, 14, 16, 20, 21, 22, 25, and 31. `umusaruro/cells.py` loads that file.
+
+A blank is an empty value. The `printed` column says why:
+
+| printed | meaning |
+| --- | --- |
+| `number` | the PDF printed a number, stored without thousands separators |
+| `dash` | the PDF printed a dash |
+| `empty` | the column was left empty |
+| `absent` | the district has no row in that table |
+
+`Cell.number()` raises `BlankCell` for every case except `number`. A blank is never read as zero. A printed zero stays zero.
+
+`checked` is false on every row. A second person still has to sign each cell against the printed page before the file is treated as signed off. The tables sit on these pages of the Season A 2026 report: 13 on page 39, 14 on page 40, 16 on page 42, 20 on page 46, 21 on page 47, 22 on page 48, 25 on page 50, and 31 on page 55.
+
+Yields are stored in kg/ha, as printed. Showing tonnes per hectare means dividing by 1,000 and rounding half up to two decimals.
+
+The transcription is rebuilt from a local text extract of the NISR PDF. The PDF is not committed.
+
+```bash
+pdftotext -layout "SAS 2026 Season A _Final Report.pdf" /tmp/sas2026a.txt
+python3 tools/transcribe_season_a.py /tmp/sas2026a.txt
+```
+
+The script refuses to write the file if the contract cells do not match.
+
+CHIRPS rainfall for September 2025 through February 2026 is not in the cell file yet. Until it is, an irrigation candidate stays unresolved.
+
+## Rules
+
+`umusaruro/rules.py` holds the team cutoffs. They are not NISR thresholds.
+
+| Constant | Value | Meaning |
+| --- | --- | --- |
+| `IRRIGATION_GAP` | 30 | large-farm irrigation minus smallholder irrigation, in points |
+| `IRRIGATION_SSF_MAX` | 15 | smallholder irrigation must be under this percent |
+| `SEED_GAP` | 25 | Table 20, all crops, percentage of farmers |
+| `SEED_LEAD` | 5 | if seed's lead over irrigation is smaller than this, irrigation stays |
+| `FERTILIZER_GAP` | 15 | Table 25 lag that gets fertilizer named on the sheet |
+
+Irrigation is a candidate only when both irrigation numbers exist, the gap is at least 30 points, and the smallholder rate is under 15%. It becomes the action only when `rainfall_below_median` is true. Seed fires when the Table 20 gap is at least 25 points. If both fire, the larger gap is the action, unless seed leads by less than 5 points. Fertilizer is named beside the action. It does not replace it. A blank large-farm cell cannot open a gap.
+
+`classify(cells, geography, rainfall_below_median=None)` returns a `Decision`. Seed on that decision means all crops, not maize seed.
 
 ## Branches
 
 `main` is the line we submit. `dev` is where merge requests land. Work goes on its own branch, then opens a merge request into `dev`. `dev` merges into `main` when a phase is accepted.
 
-Pipelines run on merge requests and on pushes to `dev` and `main`.
+Pipelines run on merge requests and on pushes to `dev` and `main`. A push to a feature branch does not start a pipeline. The current job compiles the Python modules and runs the unit tests. It also checks that both copies of the evidence contract are in the tree.
+
+## Tests
+
+From the repository root, with the standard library only:
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+`tests/test_cells.py` checks that the national maize and irrigation figures reproduce, and that a blank cannot be read as zero. `tests/test_rules.py` checks Nyagatare, Kirehe, Kamonyi, Gakenke, Ngoma, a blank large-farm cell, and the cutoffs that sit one tenth of a point away from a different result.
+
+## Where the work stands
+
+1. Evidence contract. On `main`.
+2. Season A cell file. On `main`. Second-person sign-off and the CHIRPS file are still open.
+3. Rules module, in `umusaruro/rules.py`. Irrigation stays unresolved until a caller passes the CHIRPS flag. The rainfall file itself is not computed yet.
+4. Django application: map, district page, method page. Not started. A statistic will not render without survey, table, and year.
+5. Season B 2026, loaded beside Season A. Not started. Season B irrigation is workbook Table 29, and that sheet's footer still says SAS 2025. No Season B irrigation cell is shown until that footer is resolved.
+6. Public repository, deployed link, and a disclosure of model assistance. Deadline 30 October 2026, 23:59.
+
+## Sources
+
+The contract lists every link. The ones the code reads now are:
+
+- [SAS Season A 2026](https://statistics.gov.rw/sites/default/files/documents/2026-04/SAS%202026%20Season%20A%20_Final%20Report.pdf)
+- [PSTA 5, abridged](https://www.minagri.gov.rw/fileadmin/user_upload/Minagri/Publications/Policies_and_strategies/PSTA_5_Abridged_version_Final.pdf)
+- [NISR 2026 Big Data Hackathon](https://statistics.gov.rw/about/hackathon/2026-hackathon-competition)
+
+## Model assistance
+
+Drafting, transcription checks, and the rules module used model assistance. The competition requires that disclosure in the submission. The cells still have to be signed by a person against the printed tables.
