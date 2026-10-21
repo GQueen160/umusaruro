@@ -1,0 +1,347 @@
+pdf_page,table,row,column,value_on_page,checker,checked_on,geography,farmer_type,crop,measure
+39,13,Nyarugenge,Maize,,,,Nyarugenge,all,maize,yield
+39,13,Gasabo,Maize,,,,Gasabo,all,maize,yield
+39,13,Kicukiro,Maize,,,,Kicukiro,all,maize,yield
+39,13,Nyanza,Maize,,,,Nyanza,all,maize,yield
+39,13,Gisagara,Maize,,,,Gisagara,all,maize,yield
+39,13,Nyaruguru,Maize,,,,Nyaruguru,all,maize,yield
+39,13,Huye,Maize,,,,Huye,all,maize,yield
+39,13,Nyamagabe,Maize,,,,Nyamagabe,all,maize,yield
+39,13,Ruhango,Maize,,,,Ruhango,all,maize,yield
+39,13,Muhanga,Maize,,,,Muhanga,all,maize,yield
+39,13,Kamonyi,Maize,,,,Kamonyi,all,maize,yield
+39,13,Karongi,Maize,,,,Karongi,all,maize,yield
+39,13,Rutsiro,Maize,,,,Rutsiro,all,maize,yield
+39,13,Rubavu,Maize,,,,Rubavu,all,maize,yield
+39,13,Nyabihu,Maize,,,,Nyabihu,all,maize,yield
+39,13,Ngororero,Maize,,,,Ngororero,all,maize,yield
+39,13,Rusizi,Maize,,,,Rusizi,all,maize,yield
+39,13,Nyamasheke,Maize,,,,Nyamasheke,all,maize,yield
+39,13,Rulindo,Maize,,,,Rulindo,all,maize,yield
+39,13,Gakenke,Maize,,,,Gakenke,all,maize,yield
+39,13,Musanze,Maize,,,,Musanze,all,maize,yield
+39,13,Burera,Maize,,,,Burera,all,maize,yield
+39,13,Gicumbi,Maize,,,,Gicumbi,all,maize,yield
+39,13,Rwamagana,Maize,,,,Rwamagana,all,maize,yield
+39,13,Nyagatare,Maize,,,,Nyagatare,all,maize,yield
+39,13,Gatsibo,Maize,,,,Gatsibo,all,maize,yield
+39,13,Kayonza,Maize,,,,Kayonza,all,maize,yield
+39,13,Kirehe,Maize,,,,Kirehe,all,maize,yield
+39,13,Ngoma,Maize,,,,Ngoma,all,maize,yield
+39,13,Bugesera,Maize,,,,Bugesera,all,maize,yield
+39,13,National,Maize,,,,National,all,maize,yield
+39,13,SSF,Maize,,,,National,ssf,maize,yield
+39,13,LSF,Maize,,,,National,lsf,maize,yield
+40,14,Nyarugenge,Maize,,,,Nyarugenge,lsf,maize,yield
+40,14,Gasabo,Maize,,,,Gasabo,lsf,maize,yield
+40,14,Kicukiro,Maize,,,,Kicukiro,lsf,maize,yield
+40,14,Nyanza,Maize,,,,Nyanza,lsf,maize,yield
+40,14,Gisagara,Maize,,,,Gisagara,lsf,maize,yield
+40,14,Nyaruguru,Maize,,,,Nyaruguru,lsf,maize,yield
+40,14,Huye,Maize,,,,Huye,lsf,maize,yield
+40,14,Nyamagabe,Maize,,,,Nyamagabe,lsf,maize,yield
+40,14,Ruhango,Maize,,,,Ruhango,lsf,maize,yield
+40,14,Muhanga,Maize,,,,Muhanga,lsf,maize,yield
+40,14,Kamonyi,Maize,,,,Kamonyi,lsf,maize,yield
+40,14,Karongi,Maize,,,,Karongi,lsf,maize,yield
+40,14,Rutsiro,Maize,,,,Rutsiro,lsf,maize,yield
+40,14,Rubavu,Maize,,,,Rubavu,lsf,maize,yield
+40,14,Nyabihu,Maize,,,,Nyabihu,lsf,maize,yield
+40,14,Ngororero,Maize,,,,Ngororero,lsf,maize,yield
+40,14,Rusizi,Maize,,,,Rusizi,lsf,maize,yield
+40,14,Nyamasheke,Maize,,,,Nyamasheke,lsf,maize,yield
+40,14,Rulindo,Maize,,,,Rulindo,lsf,maize,yield
+40,14,Gakenke,Maize,,,,Gakenke,lsf,maize,yield
+40,14,Musanze,Maize,,,,Musanze,lsf,maize,yield
+40,14,Burera,Maize,,,,Burera,lsf,maize,yield
+40,14,Gicumbi,Maize,,,,Gicumbi,lsf,maize,yield
+40,14,Rwamagana,Maize,,,,Rwamagana,lsf,maize,yield
+40,14,Nyagatare,Maize,,,,Nyagatare,lsf,maize,yield
+40,14,Gatsibo,Maize,,,,Gatsibo,lsf,maize,yield
+40,14,Kayonza,Maize,,,,Kayonza,lsf,maize,yield
+40,14,Kirehe,Maize,,,,Kirehe,lsf,maize,yield
+40,14,Ngoma,Maize,,,,Ngoma,lsf,maize,yield
+40,14,Bugesera,Maize,,,,Bugesera,lsf,maize,yield
+40,14,National,Maize,,,,National,lsf,maize,yield
+42,16,Maize,Post harvesting losses,,,,National,all,maize,post_harvest_loss
+46,20,Nyarugenge,"Percentage of farmers who used improved seeds, Overall",,,,Nyarugenge,all,all_crops,farmers
+46,20,Nyarugenge,"Percentage of farmers who used improved seeds, SSF",,,,Nyarugenge,ssf,all_crops,farmers
+46,20,Nyarugenge,"Percentage of farmers who used improved seeds, LSF",,,,Nyarugenge,lsf,all_crops,farmers
+46,20,Gasabo,"Percentage of farmers who used improved seeds, Overall",,,,Gasabo,all,all_crops,farmers
+46,20,Gasabo,"Percentage of farmers who used improved seeds, SSF",,,,Gasabo,ssf,all_crops,farmers
+46,20,Gasabo,"Percentage of farmers who used improved seeds, LSF",,,,Gasabo,lsf,all_crops,farmers
+46,20,Kicukiro,"Percentage of farmers who used improved seeds, Overall",,,,Kicukiro,all,all_crops,farmers
+46,20,Kicukiro,"Percentage of farmers who used improved seeds, SSF",,,,Kicukiro,ssf,all_crops,farmers
+46,20,Kicukiro,"Percentage of farmers who used improved seeds, LSF",,,,Kicukiro,lsf,all_crops,farmers
+46,20,Nyanza,"Percentage of farmers who used improved seeds, Overall",,,,Nyanza,all,all_crops,farmers
+46,20,Nyanza,"Percentage of farmers who used improved seeds, SSF",,,,Nyanza,ssf,all_crops,farmers
+46,20,Nyanza,"Percentage of farmers who used improved seeds, LSF",,,,Nyanza,lsf,all_crops,farmers
+46,20,Gisagara,"Percentage of farmers who used improved seeds, Overall",,,,Gisagara,all,all_crops,farmers
+46,20,Gisagara,"Percentage of farmers who used improved seeds, SSF",,,,Gisagara,ssf,all_crops,farmers
+46,20,Gisagara,"Percentage of farmers who used improved seeds, LSF",,,,Gisagara,lsf,all_crops,farmers
+46,20,Nyaruguru,"Percentage of farmers who used improved seeds, Overall",,,,Nyaruguru,all,all_crops,farmers
+46,20,Nyaruguru,"Percentage of farmers who used improved seeds, SSF",,,,Nyaruguru,ssf,all_crops,farmers
+46,20,Nyaruguru,"Percentage of farmers who used improved seeds, LSF",,,,Nyaruguru,lsf,all_crops,farmers
+46,20,Huye,"Percentage of farmers who used improved seeds, Overall",,,,Huye,all,all_crops,farmers
+46,20,Huye,"Percentage of farmers who used improved seeds, SSF",,,,Huye,ssf,all_crops,farmers
+46,20,Huye,"Percentage of farmers who used improved seeds, LSF",,,,Huye,lsf,all_crops,farmers
+46,20,Nyamagabe,"Percentage of farmers who used improved seeds, Overall",,,,Nyamagabe,all,all_crops,farmers
+46,20,Nyamagabe,"Percentage of farmers who used improved seeds, SSF",,,,Nyamagabe,ssf,all_crops,farmers
+46,20,Nyamagabe,"Percentage of farmers who used improved seeds, LSF",,,,Nyamagabe,lsf,all_crops,farmers
+46,20,Ruhango,"Percentage of farmers who used improved seeds, Overall",,,,Ruhango,all,all_crops,farmers
+46,20,Ruhango,"Percentage of farmers who used improved seeds, SSF",,,,Ruhango,ssf,all_crops,farmers
+46,20,Ruhango,"Percentage of farmers who used improved seeds, LSF",,,,Ruhango,lsf,all_crops,farmers
+46,20,Muhanga,"Percentage of farmers who used improved seeds, Overall",,,,Muhanga,all,all_crops,farmers
+46,20,Muhanga,"Percentage of farmers who used improved seeds, SSF",,,,Muhanga,ssf,all_crops,farmers
+46,20,Muhanga,"Percentage of farmers who used improved seeds, LSF",,,,Muhanga,lsf,all_crops,farmers
+46,20,Kamonyi,"Percentage of farmers who used improved seeds, Overall",,,,Kamonyi,all,all_crops,farmers
+46,20,Kamonyi,"Percentage of farmers who used improved seeds, SSF",,,,Kamonyi,ssf,all_crops,farmers
+46,20,Kamonyi,"Percentage of farmers who used improved seeds, LSF",,,,Kamonyi,lsf,all_crops,farmers
+46,20,Karongi,"Percentage of farmers who used improved seeds, Overall",,,,Karongi,all,all_crops,farmers
+46,20,Karongi,"Percentage of farmers who used improved seeds, SSF",,,,Karongi,ssf,all_crops,farmers
+46,20,Karongi,"Percentage of farmers who used improved seeds, LSF",,,,Karongi,lsf,all_crops,farmers
+46,20,Rutsiro,"Percentage of farmers who used improved seeds, Overall",,,,Rutsiro,all,all_crops,farmers
+46,20,Rutsiro,"Percentage of farmers who used improved seeds, SSF",,,,Rutsiro,ssf,all_crops,farmers
+46,20,Rutsiro,"Percentage of farmers who used improved seeds, LSF",,,,Rutsiro,lsf,all_crops,farmers
+46,20,Rubavu,"Percentage of farmers who used improved seeds, Overall",,,,Rubavu,all,all_crops,farmers
+46,20,Rubavu,"Percentage of farmers who used improved seeds, SSF",,,,Rubavu,ssf,all_crops,farmers
+46,20,Rubavu,"Percentage of farmers who used improved seeds, LSF",,,,Rubavu,lsf,all_crops,farmers
+46,20,Nyabihu,"Percentage of farmers who used improved seeds, Overall",,,,Nyabihu,all,all_crops,farmers
+46,20,Nyabihu,"Percentage of farmers who used improved seeds, SSF",,,,Nyabihu,ssf,all_crops,farmers
+46,20,Nyabihu,"Percentage of farmers who used improved seeds, LSF",,,,Nyabihu,lsf,all_crops,farmers
+46,20,Ngororero,"Percentage of farmers who used improved seeds, Overall",,,,Ngororero,all,all_crops,farmers
+46,20,Ngororero,"Percentage of farmers who used improved seeds, SSF",,,,Ngororero,ssf,all_crops,farmers
+46,20,Ngororero,"Percentage of farmers who used improved seeds, LSF",,,,Ngororero,lsf,all_crops,farmers
+46,20,Rusizi,"Percentage of farmers who used improved seeds, Overall",,,,Rusizi,all,all_crops,farmers
+46,20,Rusizi,"Percentage of farmers who used improved seeds, SSF",,,,Rusizi,ssf,all_crops,farmers
+46,20,Rusizi,"Percentage of farmers who used improved seeds, LSF",,,,Rusizi,lsf,all_crops,farmers
+46,20,Nyamasheke,"Percentage of farmers who used improved seeds, Overall",,,,Nyamasheke,all,all_crops,farmers
+46,20,Nyamasheke,"Percentage of farmers who used improved seeds, SSF",,,,Nyamasheke,ssf,all_crops,farmers
+46,20,Nyamasheke,"Percentage of farmers who used improved seeds, LSF",,,,Nyamasheke,lsf,all_crops,farmers
+46,20,Rulindo,"Percentage of farmers who used improved seeds, Overall",,,,Rulindo,all,all_crops,farmers
+46,20,Rulindo,"Percentage of farmers who used improved seeds, SSF",,,,Rulindo,ssf,all_crops,farmers
+46,20,Rulindo,"Percentage of farmers who used improved seeds, LSF",,,,Rulindo,lsf,all_crops,farmers
+46,20,Gakenke,"Percentage of farmers who used improved seeds, Overall",,,,Gakenke,all,all_crops,farmers
+46,20,Gakenke,"Percentage of farmers who used improved seeds, SSF",,,,Gakenke,ssf,all_crops,farmers
+46,20,Gakenke,"Percentage of farmers who used improved seeds, LSF",,,,Gakenke,lsf,all_crops,farmers
+46,20,Musanze,"Percentage of farmers who used improved seeds, Overall",,,,Musanze,all,all_crops,farmers
+46,20,Musanze,"Percentage of farmers who used improved seeds, SSF",,,,Musanze,ssf,all_crops,farmers
+46,20,Musanze,"Percentage of farmers who used improved seeds, LSF",,,,Musanze,lsf,all_crops,farmers
+46,20,Burera,"Percentage of farmers who used improved seeds, Overall",,,,Burera,all,all_crops,farmers
+46,20,Burera,"Percentage of farmers who used improved seeds, SSF",,,,Burera,ssf,all_crops,farmers
+46,20,Burera,"Percentage of farmers who used improved seeds, LSF",,,,Burera,lsf,all_crops,farmers
+46,20,Gicumbi,"Percentage of farmers who used improved seeds, Overall",,,,Gicumbi,all,all_crops,farmers
+46,20,Gicumbi,"Percentage of farmers who used improved seeds, SSF",,,,Gicumbi,ssf,all_crops,farmers
+46,20,Gicumbi,"Percentage of farmers who used improved seeds, LSF",,,,Gicumbi,lsf,all_crops,farmers
+46,20,Rwamagana,"Percentage of farmers who used improved seeds, Overall",,,,Rwamagana,all,all_crops,farmers
+46,20,Rwamagana,"Percentage of farmers who used improved seeds, SSF",,,,Rwamagana,ssf,all_crops,farmers
+46,20,Rwamagana,"Percentage of farmers who used improved seeds, LSF",,,,Rwamagana,lsf,all_crops,farmers
+46,20,Nyagatare,"Percentage of farmers who used improved seeds, Overall",,,,Nyagatare,all,all_crops,farmers
+46,20,Nyagatare,"Percentage of farmers who used improved seeds, SSF",,,,Nyagatare,ssf,all_crops,farmers
+46,20,Nyagatare,"Percentage of farmers who used improved seeds, LSF",,,,Nyagatare,lsf,all_crops,farmers
+46,20,Gatsibo,"Percentage of farmers who used improved seeds, Overall",,,,Gatsibo,all,all_crops,farmers
+46,20,Gatsibo,"Percentage of farmers who used improved seeds, SSF",,,,Gatsibo,ssf,all_crops,farmers
+46,20,Gatsibo,"Percentage of farmers who used improved seeds, LSF",,,,Gatsibo,lsf,all_crops,farmers
+46,20,Kayonza,"Percentage of farmers who used improved seeds, Overall",,,,Kayonza,all,all_crops,farmers
+46,20,Kayonza,"Percentage of farmers who used improved seeds, SSF",,,,Kayonza,ssf,all_crops,farmers
+46,20,Kayonza,"Percentage of farmers who used improved seeds, LSF",,,,Kayonza,lsf,all_crops,farmers
+46,20,Kirehe,"Percentage of farmers who used improved seeds, Overall",,,,Kirehe,all,all_crops,farmers
+46,20,Kirehe,"Percentage of farmers who used improved seeds, SSF",,,,Kirehe,ssf,all_crops,farmers
+46,20,Kirehe,"Percentage of farmers who used improved seeds, LSF",,,,Kirehe,lsf,all_crops,farmers
+46,20,Ngoma,"Percentage of farmers who used improved seeds, Overall",,,,Ngoma,all,all_crops,farmers
+46,20,Ngoma,"Percentage of farmers who used improved seeds, SSF",,,,Ngoma,ssf,all_crops,farmers
+46,20,Ngoma,"Percentage of farmers who used improved seeds, LSF",,,,Ngoma,lsf,all_crops,farmers
+46,20,Bugesera,"Percentage of farmers who used improved seeds, Overall",,,,Bugesera,all,all_crops,farmers
+46,20,Bugesera,"Percentage of farmers who used improved seeds, SSF",,,,Bugesera,ssf,all_crops,farmers
+46,20,Bugesera,"Percentage of farmers who used improved seeds, LSF",,,,Bugesera,lsf,all_crops,farmers
+46,20,National,"Percentage of farmers who used improved seeds, Overall",,,,National,all,all_crops,farmers
+46,20,National,"Percentage of farmers who used improved seeds, SSF",,,,National,ssf,all_crops,farmers
+46,20,National,"Percentage of farmers who used improved seeds, LSF",,,,National,lsf,all_crops,farmers
+47,21,Maize,Improved seeds,,,,National,all,maize,improved
+47,21,Bush bean,Improved seeds,,,,National,all,bush_bean,improved
+50,25,Nyarugenge,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Nyarugenge,all,all_crops,farmers
+50,25,Nyarugenge,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Nyarugenge,ssf,all_crops,farmers
+50,25,Nyarugenge,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Nyarugenge,lsf,all_crops,farmers
+50,25,Gasabo,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Gasabo,all,all_crops,farmers
+50,25,Gasabo,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Gasabo,ssf,all_crops,farmers
+50,25,Gasabo,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Gasabo,lsf,all_crops,farmers
+50,25,Kicukiro,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Kicukiro,all,all_crops,farmers
+50,25,Kicukiro,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Kicukiro,ssf,all_crops,farmers
+50,25,Kicukiro,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Kicukiro,lsf,all_crops,farmers
+50,25,Nyanza,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Nyanza,all,all_crops,farmers
+50,25,Nyanza,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Nyanza,ssf,all_crops,farmers
+50,25,Nyanza,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Nyanza,lsf,all_crops,farmers
+50,25,Gisagara,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Gisagara,all,all_crops,farmers
+50,25,Gisagara,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Gisagara,ssf,all_crops,farmers
+50,25,Gisagara,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Gisagara,lsf,all_crops,farmers
+50,25,Nyaruguru,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Nyaruguru,all,all_crops,farmers
+50,25,Nyaruguru,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Nyaruguru,ssf,all_crops,farmers
+50,25,Nyaruguru,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Nyaruguru,lsf,all_crops,farmers
+50,25,Huye,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Huye,all,all_crops,farmers
+50,25,Huye,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Huye,ssf,all_crops,farmers
+50,25,Huye,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Huye,lsf,all_crops,farmers
+50,25,Nyamagabe,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Nyamagabe,all,all_crops,farmers
+50,25,Nyamagabe,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Nyamagabe,ssf,all_crops,farmers
+50,25,Nyamagabe,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Nyamagabe,lsf,all_crops,farmers
+50,25,Ruhango,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Ruhango,all,all_crops,farmers
+50,25,Ruhango,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Ruhango,ssf,all_crops,farmers
+50,25,Ruhango,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Ruhango,lsf,all_crops,farmers
+50,25,Muhanga,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Muhanga,all,all_crops,farmers
+50,25,Muhanga,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Muhanga,ssf,all_crops,farmers
+50,25,Muhanga,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Muhanga,lsf,all_crops,farmers
+50,25,Kamonyi,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Kamonyi,all,all_crops,farmers
+50,25,Kamonyi,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Kamonyi,ssf,all_crops,farmers
+50,25,Kamonyi,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Kamonyi,lsf,all_crops,farmers
+50,25,Karongi,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Karongi,all,all_crops,farmers
+50,25,Karongi,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Karongi,ssf,all_crops,farmers
+50,25,Karongi,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Karongi,lsf,all_crops,farmers
+50,25,Rutsiro,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Rutsiro,all,all_crops,farmers
+50,25,Rutsiro,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Rutsiro,ssf,all_crops,farmers
+50,25,Rutsiro,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Rutsiro,lsf,all_crops,farmers
+50,25,Rubavu,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Rubavu,all,all_crops,farmers
+50,25,Rubavu,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Rubavu,ssf,all_crops,farmers
+50,25,Rubavu,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Rubavu,lsf,all_crops,farmers
+50,25,Nyabihu,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Nyabihu,all,all_crops,farmers
+50,25,Nyabihu,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Nyabihu,ssf,all_crops,farmers
+50,25,Nyabihu,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Nyabihu,lsf,all_crops,farmers
+50,25,Ngororero,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Ngororero,all,all_crops,farmers
+50,25,Ngororero,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Ngororero,ssf,all_crops,farmers
+50,25,Ngororero,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Ngororero,lsf,all_crops,farmers
+50,25,Rusizi,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Rusizi,all,all_crops,farmers
+50,25,Rusizi,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Rusizi,ssf,all_crops,farmers
+50,25,Rusizi,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Rusizi,lsf,all_crops,farmers
+50,25,Nyamasheke,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Nyamasheke,all,all_crops,farmers
+50,25,Nyamasheke,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Nyamasheke,ssf,all_crops,farmers
+50,25,Nyamasheke,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Nyamasheke,lsf,all_crops,farmers
+50,25,Rulindo,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Rulindo,all,all_crops,farmers
+50,25,Rulindo,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Rulindo,ssf,all_crops,farmers
+50,25,Rulindo,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Rulindo,lsf,all_crops,farmers
+50,25,Gakenke,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Gakenke,all,all_crops,farmers
+50,25,Gakenke,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Gakenke,ssf,all_crops,farmers
+50,25,Gakenke,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Gakenke,lsf,all_crops,farmers
+50,25,Musanze,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Musanze,all,all_crops,farmers
+50,25,Musanze,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Musanze,ssf,all_crops,farmers
+50,25,Musanze,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Musanze,lsf,all_crops,farmers
+50,25,Burera,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Burera,all,all_crops,farmers
+50,25,Burera,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Burera,ssf,all_crops,farmers
+50,25,Burera,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Burera,lsf,all_crops,farmers
+50,25,Gicumbi,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Gicumbi,all,all_crops,farmers
+50,25,Gicumbi,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Gicumbi,ssf,all_crops,farmers
+50,25,Gicumbi,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Gicumbi,lsf,all_crops,farmers
+50,25,Rwamagana,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Rwamagana,all,all_crops,farmers
+50,25,Rwamagana,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Rwamagana,ssf,all_crops,farmers
+50,25,Rwamagana,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Rwamagana,lsf,all_crops,farmers
+50,25,Nyagatare,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Nyagatare,all,all_crops,farmers
+50,25,Nyagatare,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Nyagatare,ssf,all_crops,farmers
+50,25,Nyagatare,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Nyagatare,lsf,all_crops,farmers
+50,25,Gatsibo,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Gatsibo,all,all_crops,farmers
+50,25,Gatsibo,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Gatsibo,ssf,all_crops,farmers
+50,25,Gatsibo,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Gatsibo,lsf,all_crops,farmers
+50,25,Kayonza,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Kayonza,all,all_crops,farmers
+50,25,Kayonza,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Kayonza,ssf,all_crops,farmers
+50,25,Kayonza,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Kayonza,lsf,all_crops,farmers
+50,25,Kirehe,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Kirehe,all,all_crops,farmers
+50,25,Kirehe,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Kirehe,ssf,all_crops,farmers
+50,25,Kirehe,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Kirehe,lsf,all_crops,farmers
+50,25,Ngoma,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Ngoma,all,all_crops,farmers
+50,25,Ngoma,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Ngoma,ssf,all_crops,farmers
+50,25,Ngoma,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Ngoma,lsf,all_crops,farmers
+50,25,Bugesera,"Percentage of farmers who used inorganic fertilizers, Overall",,,,Bugesera,all,all_crops,farmers
+50,25,Bugesera,"Percentage of farmers who used inorganic fertilizers, SSF",,,,Bugesera,ssf,all_crops,farmers
+50,25,Bugesera,"Percentage of farmers who used inorganic fertilizers, LSF",,,,Bugesera,lsf,all_crops,farmers
+50,25,National,"Percentage of farmers who used inorganic fertilizers, Overall",,,,National,all,all_crops,farmers
+50,25,National,"Percentage of farmers who used inorganic fertilizers, SSF",,,,National,ssf,all_crops,farmers
+50,25,National,"Percentage of farmers who used inorganic fertilizers, LSF",,,,National,lsf,all_crops,farmers
+55,31,Nyarugenge,"Farmers who practiced irrigation (%), Overall",,,,Nyarugenge,all,,irrigation
+55,31,Nyarugenge,"Farmers who practiced irrigation (%), SSF",,,,Nyarugenge,ssf,,irrigation
+55,31,Nyarugenge,"Farmers who practiced irrigation (%), LSF",,,,Nyarugenge,lsf,,irrigation
+55,31,Gasabo,"Farmers who practiced irrigation (%), Overall",,,,Gasabo,all,,irrigation
+55,31,Gasabo,"Farmers who practiced irrigation (%), SSF",,,,Gasabo,ssf,,irrigation
+55,31,Gasabo,"Farmers who practiced irrigation (%), LSF",,,,Gasabo,lsf,,irrigation
+55,31,Kicukiro,"Farmers who practiced irrigation (%), Overall",,,,Kicukiro,all,,irrigation
+55,31,Kicukiro,"Farmers who practiced irrigation (%), SSF",,,,Kicukiro,ssf,,irrigation
+55,31,Kicukiro,"Farmers who practiced irrigation (%), LSF",,,,Kicukiro,lsf,,irrigation
+55,31,Nyanza,"Farmers who practiced irrigation (%), Overall",,,,Nyanza,all,,irrigation
+55,31,Nyanza,"Farmers who practiced irrigation (%), SSF",,,,Nyanza,ssf,,irrigation
+55,31,Nyanza,"Farmers who practiced irrigation (%), LSF",,,,Nyanza,lsf,,irrigation
+55,31,Gisagara,"Farmers who practiced irrigation (%), Overall",,,,Gisagara,all,,irrigation
+55,31,Gisagara,"Farmers who practiced irrigation (%), SSF",,,,Gisagara,ssf,,irrigation
+55,31,Gisagara,"Farmers who practiced irrigation (%), LSF",,,,Gisagara,lsf,,irrigation
+55,31,Nyaruguru,"Farmers who practiced irrigation (%), Overall",,,,Nyaruguru,all,,irrigation
+55,31,Nyaruguru,"Farmers who practiced irrigation (%), SSF",,,,Nyaruguru,ssf,,irrigation
+55,31,Nyaruguru,"Farmers who practiced irrigation (%), LSF",,,,Nyaruguru,lsf,,irrigation
+55,31,Huye,"Farmers who practiced irrigation (%), Overall",,,,Huye,all,,irrigation
+55,31,Huye,"Farmers who practiced irrigation (%), SSF",,,,Huye,ssf,,irrigation
+55,31,Huye,"Farmers who practiced irrigation (%), LSF",,,,Huye,lsf,,irrigation
+55,31,Nyamagabe,"Farmers who practiced irrigation (%), Overall",,,,Nyamagabe,all,,irrigation
+55,31,Nyamagabe,"Farmers who practiced irrigation (%), SSF",,,,Nyamagabe,ssf,,irrigation
+55,31,Nyamagabe,"Farmers who practiced irrigation (%), LSF",,,,Nyamagabe,lsf,,irrigation
+55,31,Ruhango,"Farmers who practiced irrigation (%), Overall",,,,Ruhango,all,,irrigation
+55,31,Ruhango,"Farmers who practiced irrigation (%), SSF",,,,Ruhango,ssf,,irrigation
+55,31,Ruhango,"Farmers who practiced irrigation (%), LSF",,,,Ruhango,lsf,,irrigation
+55,31,Muhanga,"Farmers who practiced irrigation (%), Overall",,,,Muhanga,all,,irrigation
+55,31,Muhanga,"Farmers who practiced irrigation (%), SSF",,,,Muhanga,ssf,,irrigation
+55,31,Muhanga,"Farmers who practiced irrigation (%), LSF",,,,Muhanga,lsf,,irrigation
+55,31,Kamonyi,"Farmers who practiced irrigation (%), Overall",,,,Kamonyi,all,,irrigation
+55,31,Kamonyi,"Farmers who practiced irrigation (%), SSF",,,,Kamonyi,ssf,,irrigation
+55,31,Kamonyi,"Farmers who practiced irrigation (%), LSF",,,,Kamonyi,lsf,,irrigation
+55,31,Karongi,"Farmers who practiced irrigation (%), Overall",,,,Karongi,all,,irrigation
+55,31,Karongi,"Farmers who practiced irrigation (%), SSF",,,,Karongi,ssf,,irrigation
+55,31,Karongi,"Farmers who practiced irrigation (%), LSF",,,,Karongi,lsf,,irrigation
+55,31,Rutsiro,"Farmers who practiced irrigation (%), Overall",,,,Rutsiro,all,,irrigation
+55,31,Rutsiro,"Farmers who practiced irrigation (%), SSF",,,,Rutsiro,ssf,,irrigation
+55,31,Rutsiro,"Farmers who practiced irrigation (%), LSF",,,,Rutsiro,lsf,,irrigation
+55,31,Rubavu,"Farmers who practiced irrigation (%), Overall",,,,Rubavu,all,,irrigation
+55,31,Rubavu,"Farmers who practiced irrigation (%), SSF",,,,Rubavu,ssf,,irrigation
+55,31,Rubavu,"Farmers who practiced irrigation (%), LSF",,,,Rubavu,lsf,,irrigation
+55,31,Nyabihu,"Farmers who practiced irrigation (%), Overall",,,,Nyabihu,all,,irrigation
+55,31,Nyabihu,"Farmers who practiced irrigation (%), SSF",,,,Nyabihu,ssf,,irrigation
+55,31,Nyabihu,"Farmers who practiced irrigation (%), LSF",,,,Nyabihu,lsf,,irrigation
+55,31,Ngororero,"Farmers who practiced irrigation (%), Overall",,,,Ngororero,all,,irrigation
+55,31,Ngororero,"Farmers who practiced irrigation (%), SSF",,,,Ngororero,ssf,,irrigation
+55,31,Ngororero,"Farmers who practiced irrigation (%), LSF",,,,Ngororero,lsf,,irrigation
+55,31,Rusizi,"Farmers who practiced irrigation (%), Overall",,,,Rusizi,all,,irrigation
+55,31,Rusizi,"Farmers who practiced irrigation (%), SSF",,,,Rusizi,ssf,,irrigation
+55,31,Rusizi,"Farmers who practiced irrigation (%), LSF",,,,Rusizi,lsf,,irrigation
+55,31,Nyamasheke,"Farmers who practiced irrigation (%), Overall",,,,Nyamasheke,all,,irrigation
+55,31,Nyamasheke,"Farmers who practiced irrigation (%), SSF",,,,Nyamasheke,ssf,,irrigation
+55,31,Nyamasheke,"Farmers who practiced irrigation (%), LSF",,,,Nyamasheke,lsf,,irrigation
+55,31,Rulindo,"Farmers who practiced irrigation (%), Overall",,,,Rulindo,all,,irrigation
+55,31,Rulindo,"Farmers who practiced irrigation (%), SSF",,,,Rulindo,ssf,,irrigation
+55,31,Rulindo,"Farmers who practiced irrigation (%), LSF",,,,Rulindo,lsf,,irrigation
+55,31,Gakenke,"Farmers who practiced irrigation (%), Overall",,,,Gakenke,all,,irrigation
+55,31,Gakenke,"Farmers who practiced irrigation (%), SSF",,,,Gakenke,ssf,,irrigation
+55,31,Gakenke,"Farmers who practiced irrigation (%), LSF",,,,Gakenke,lsf,,irrigation
+55,31,Musanze,"Farmers who practiced irrigation (%), Overall",,,,Musanze,all,,irrigation
+55,31,Musanze,"Farmers who practiced irrigation (%), SSF",,,,Musanze,ssf,,irrigation
+55,31,Musanze,"Farmers who practiced irrigation (%), LSF",,,,Musanze,lsf,,irrigation
+55,31,Burera,"Farmers who practiced irrigation (%), Overall",,,,Burera,all,,irrigation
+55,31,Burera,"Farmers who practiced irrigation (%), SSF",,,,Burera,ssf,,irrigation
+55,31,Burera,"Farmers who practiced irrigation (%), LSF",,,,Burera,lsf,,irrigation
+55,31,Gicumbi,"Farmers who practiced irrigation (%), Overall",,,,Gicumbi,all,,irrigation
+55,31,Gicumbi,"Farmers who practiced irrigation (%), SSF",,,,Gicumbi,ssf,,irrigation
+55,31,Gicumbi,"Farmers who practiced irrigation (%), LSF",,,,Gicumbi,lsf,,irrigation
+55,31,Rwamagana,"Farmers who practiced irrigation (%), Overall",,,,Rwamagana,all,,irrigation
+55,31,Rwamagana,"Farmers who practiced irrigation (%), SSF",,,,Rwamagana,ssf,,irrigation
+55,31,Rwamagana,"Farmers who practiced irrigation (%), LSF",,,,Rwamagana,lsf,,irrigation
+55,31,Nyagatare,"Farmers who practiced irrigation (%), Overall",,,,Nyagatare,all,,irrigation
+55,31,Nyagatare,"Farmers who practiced irrigation (%), SSF",,,,Nyagatare,ssf,,irrigation
+55,31,Nyagatare,"Farmers who practiced irrigation (%), LSF",,,,Nyagatare,lsf,,irrigation
+55,31,Gatsibo,"Farmers who practiced irrigation (%), Overall",,,,Gatsibo,all,,irrigation
+55,31,Gatsibo,"Farmers who practiced irrigation (%), SSF",,,,Gatsibo,ssf,,irrigation
+55,31,Gatsibo,"Farmers who practiced irrigation (%), LSF",,,,Gatsibo,lsf,,irrigation
+55,31,Kayonza,"Farmers who practiced irrigation (%), Overall",,,,Kayonza,all,,irrigation
+55,31,Kayonza,"Farmers who practiced irrigation (%), SSF",,,,Kayonza,ssf,,irrigation
+55,31,Kayonza,"Farmers who practiced irrigation (%), LSF",,,,Kayonza,lsf,,irrigation
+55,31,Kirehe,"Farmers who practiced irrigation (%), Overall",,,,Kirehe,all,,irrigation
+55,31,Kirehe,"Farmers who practiced irrigation (%), SSF",,,,Kirehe,ssf,,irrigation
+55,31,Kirehe,"Farmers who practiced irrigation (%), LSF",,,,Kirehe,lsf,,irrigation
+55,31,Ngoma,"Farmers who practiced irrigation (%), Overall",,,,Ngoma,all,,irrigation
+55,31,Ngoma,"Farmers who practiced irrigation (%), SSF",,,,Ngoma,ssf,,irrigation
+55,31,Ngoma,"Farmers who practiced irrigation (%), LSF",,,,Ngoma,lsf,,irrigation
+55,31,Bugesera,"Farmers who practiced irrigation (%), Overall",,,,Bugesera,all,,irrigation
+55,31,Bugesera,"Farmers who practiced irrigation (%), SSF",,,,Bugesera,ssf,,irrigation
+55,31,Bugesera,"Farmers who practiced irrigation (%), LSF",,,,Bugesera,lsf,,irrigation
+55,31,National,"Farmers who practiced irrigation (%), Overall",,,,National,all,,irrigation
+55,31,National,"Farmers who practiced irrigation (%), SSF",,,,National,ssf,,irrigation
+55,31,National,"Farmers who practiced irrigation (%), LSF",,,,National,lsf,,irrigation

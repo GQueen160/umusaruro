@@ -1,32 +1,88 @@
 # Umusaruro
 
-Umusaruro is a district maize action sheet for a district agronomist and a planner at the Ministry of Agriculture and Animal Resources. The name is the Kinyarwanda word for harvest.
+Umusaruro is a district maize action sheet for Rwanda. For each of the 30 districts, it shows Season A 2026 maize yield against the national PSTA 5 milestones. It then names the lever the published survey tables support: irrigation, or improved seed. Inorganic fertilizer is named on the same sheet when that table lags.
 
-For one district, the sheet will show Season A 2026 maize yield against the PSTA 5 milestones, then the lever the published tables support: irrigation, or all-crop improved seed. Inorganic fertilizer is named on the same sheet when that table lags. The reader does not type figures into the system.
+The readers are a district agronomist and a planner at the Ministry of Agriculture and Animal Resources (MINAGRI). They read the sheet. They do not type figures into it. Every number on a screen names its survey, table, and year. A blank in the source table stays blank. It is never shown as zero.
 
-This is the agriculture track of the NISR 2026 Big Data Hackathon. A submission is a public Git repository, a deployed application, and documentation. The deadline is 23:59 on 30 October 2026.
+*Umusaruro* is Kinyarwanda for harvest. The project is an entry in the agriculture track of the [NISR 2026 Big Data Hackathon](https://statistics.gov.rw/about/hackathon/2026-hackathon-competition).
 
-## The contract
+## The problem
 
-[docs/Umusaruro-evidence-contract.pdf](docs/Umusaruro-evidence-contract.pdf) locks the product. The same text is in [docs/Umusaruro-evidence-contract.docx](docs/Umusaruro-evidence-contract.docx). A number may appear on a screen only when that contract names its survey, table, and year.
+Rwanda's agriculture strategy, PSTA 5, sets a maize yield path measured by the Seasonal Agricultural Survey (SAS): 2.06 tonnes per hectare in 2025/26 and 2.26 in 2026/27. Season A 2026, the main maize season, came in at 1.99 t/ha for all farms. That is under both milestones.
 
-The contract also says what this project will not claim: a maize variety, a satisfaction score, a learned seed-soil-fertilizer score, a district store, a national rate copied onto a district, or a re-estimate of the NST2 irrigated-hectare total. Table 20 is all-crop improved seed. It is not the maize seed rate. Maize seed, 64.3% improved, is Table 21 and has no district column.
+The gap is not spread evenly. In the same season, smallholders averaged 1.90 t/ha and large farms 4.34 t/ha (SAS Season A 2026, Table 13). Only two districts, Nyagatare and Kirehe, reached 2.26.
 
-PSTA 5 maize milestones, tonnes per hectare, are baseline 2023 = 1.70, then 1.87, 2.06, 2.26, 2.49, and 2.74. The figure 2.26 is the 2026/27 column. Season A 2026, all farms, is 1,994 kg/ha.
+The question is already on the national agenda. In June 2026, Parliament summoned the agriculture minister over maize yield of 2.0 against the 2.26 target. Resolution 3 of the 20th Umushyikirano, in February 2026, names fertilizer, improved seed, and irrigation as the productivity levers. At the March 2026 leadership retreat in Gako, the message was that the inputs exist and the failure is follow-through.
 
-To regenerate the contract from this repository:
+What a district office lacks is one page that says, from published numbers, which of those levers its own smallholders are furthest behind on.
 
-```bash
-python3 -m venv .venv
-.venv/bin/pip install python-docx fpdf2
-.venv/bin/python docs/build_evidence_contract.py
-```
+## What the sheet shows
 
-## Data
+For one district:
 
-`data/season_a_2026/cells.csv` holds the transcribed Season A 2026 cells for Tables 13, 14, 16, 20, 21, 22, 25, and 31. `umusaruro/cells.py` loads that file.
+1. Season A 2026 maize yield, in kg/ha as printed, and in t/ha.
+2. Whether that yield is above or below the PSTA 5 milestone for the named year.
+3. How far smallholders are behind large farms in the same district, on irrigation, improved seed, and inorganic fertilizer.
+4. One action, irrigation or seed, from fixed rules. Fertilizer is named beside the action when it lags.
+5. The survey, table, year, and source link for every number.
 
-A blank is an empty value. The `printed` column says why:
+## Why maize
+
+Maize is the crop where a government target, a district-level survey figure, and an open public question all line up.
+
+- PSTA 5 has a maize yield milestone, measured with the same survey that prints district yields.
+- Season A is the main maize season, and its report prints maize yield for every district.
+- Large farms show what a higher yield looks like under the same season and survey: 4.34 t/ha against 1.90 for smallholders.
+
+Beans do not work the same way. Large farms average 0.54 t/ha against 0.70 nationally, so there is no large-farm level to catch up to.
+
+## Why irrigation, seed, and fertilizer
+
+These are the only three inputs where the Season A report prints district figures split by farm type, smallholders (SSF) against large-scale farms (LSF):
+
+| Lever | Table | What the table measures |
+| --- | --- | --- |
+| Irrigation | 31 | percentage of farmers who irrigated |
+| Improved seed | 20 | percentage of farmers who used improved seed, **all crops** |
+| Inorganic fertilizer | 25 | percentage of farmers who used inorganic fertilizer, all crops |
+
+That split lets a sheet say how far behind a district's smallholders are, compared with large farms in the same district. They are also the three levers named in the Umushyikirano resolution.
+
+Each lever has a limit the sheet states plainly.
+
+- **Seed means all crops.** Table 20 covers every crop. The maize seed rate, 64.3% improved, is Table 21, and it is national only, with no district column. The sheet says "all-crop seed", never "maize seed".
+- **Irrigation is gated by rainfall.** A district with a wide irrigation gap but above-median rain is not told to irrigate first.
+- **Fertilizer is a note, not the action.** It is named beside the main action and never replaces it.
+- **A gap is not a cause.** Each figure compares two kinds of farm. The sheet does not claim that closing a gap raises yield by a set amount.
+
+## Datasets used
+
+| Dataset | Publisher | What this project takes | In the repository |
+| --- | --- | --- | --- |
+| [Seasonal Agricultural Survey, Season A 2026](https://statistics.gov.rw/sites/default/files/documents/2026-04/SAS%202026%20Season%20A%20_Final%20Report.pdf) | NISR | Tables 13, 14, 16, 20, 21, 22, 25, and 31, transcribed cell by cell | `data/season_a_2026/cells.csv` |
+| [PSTA 5, abridged results framework](https://www.minagri.gov.rw/fileadmin/user_upload/Minagri/Publications/Policies_and_strategies/PSTA_5_Abridged_version_Final.pdf) | MINAGRI | Maize yield milestones: 1.70 (2023 baseline), 1.87, 2.06, 2.26, 2.49, 2.74 t/ha | the evidence contract |
+| [CHIRPS v2.0, Africa monthly](https://data.chc.ucsb.edu/products/CHIRPS-2.0/africa_monthly/tifs/) | Climate Hazards Center, UC Santa Barbara | Rainfall, September 2025 to February 2026, summed per district | `data/chirps/season_a_2026_rainfall.csv` |
+| [geoBoundaries, Rwanda ADM2](https://www.geoboundaries.org/api/current/gbOpen/RWA/ADM2/) | geoBoundaries, from Open Data Rwanda, CC BY 4.0 | The 30 district boundaries used to sum rainfall | not committed |
+
+Season A 2026 is the base file because it is the latest report that prints district maize yield and district irrigation by farm type together. It covers the main maize season. It is not the whole year.
+
+### Read for context, not on the sheet
+
+| Dataset | Why it is not on the sheet |
+| --- | --- |
+| [SAS Season B 2026](https://statistics.gov.rw/statistical-publications/agriculture-environment/seasonal-agricultural-survey-season-b-2026) | Planned as a check file beside Season A. It must never replace a Season A cell. Its irrigation sheet, workbook Table 29, has a footer that still reads "SAS 2025", so no Season B irrigation cell is shown until that is resolved. |
+| [SAS 2025 microdata, catalog study 124](https://microdata.statistics.gov.rw/index.php/catalog/124) | Not used until a weighted run reproduces a published national rate, such as 64.3% maize improved seed. It has no variety name and no satisfaction score. No 2026 microdata is on the catalog. |
+| [Agricultural Household Survey 2024](https://statistics.gov.rw/sites/default/files/documents/2025-10/AHS%202024_Main%20report.pdf) | Provincial, not district. Its farmer-reason questions on irrigation are not a district table. |
+| [RwaSIS](https://www.rab.gov.rw/1-1/news-details/rab-launches-rwanda-digital-soil-information-system-to-improve-agricultural-productivity) | RAB's soil and fertilizer recommendation system. Maize recommendations were still in testing at the November 2024 launch. This project does not replace it. |
+| [NST2 2024–2029, abridged](https://www.minecofin.gov.rw/fileadmin/user_upload/Minecofin/Publications/STRATEGIES/NST_2/NST2_2024-2029_Abridged.pdf) | Context for national irrigated-area targets. This project does not re-estimate irrigated hectares. |
+
+## Method
+
+### Transcription
+
+`tools/transcribe_season_a.py` reads a text extract of the NISR PDF and writes one row per printed cell. Yields stay in kg/ha, as printed. Showing t/ha means dividing by 1,000 and rounding half up to two decimals.
+
+A blank is an empty value. The `printed` column records why:
 
 | printed | meaning |
 | --- | --- |
@@ -35,28 +91,110 @@ A blank is an empty value. The `printed` column says why:
 | `empty` | the column was left empty |
 | `absent` | the district has no row in that table |
 
-`Cell.number()` raises `BlankCell` for every case except `number`. A blank is never read as zero. A printed zero stays zero.
+`Cell.number()` in `umusaruro/cells.py` raises `BlankCell` for every case except `number`. A blank is never read as zero. A printed zero stays zero.
 
-`checked` is false on every row. A second person still has to sign each cell against the printed page before the file is treated as signed off. The tables sit on these pages of the Season A 2026 report: 13 on page 39, 14 on page 40, 16 on page 42, 20 on page 46, 21 on page 47, 22 on page 48, 25 on page 50, and 31 on page 55.
+The script refuses to write the file unless the national figures in the contract reproduce: maize 1,897, 1,994, and 4,337 kg/ha, and irrigation 12.6% of smallholders and 60.3% of large farms.
 
-Yields are stored in kg/ha, as printed. Showing tonnes per hectare means dividing by 1,000 and rounding half up to two decimals.
+### Rainfall gate
 
-The transcription is rebuilt from a local text extract of the NISR PDF. The PDF is not committed.
+`tools/chirps_gate.py` sums the six monthly CHIRPS rasters. A district's total is the mean of the six-month sums at the 0.05° grid cells whose centres fall inside the district. The cell count is stored beside the total. Kicukiro rests on 7 cells and Nyarugenge on 2, so those totals are thin.
+
+The median of the 30 totals is 689.25 mm. 15 districts are below it. Rainfall gates irrigation only. It never replaces a NISR cell, and it is not the farmer's reason for irrigating or not.
+
+### Rules
+
+`umusaruro/rules.py` holds the cutoffs. They are the team's, not NISR thresholds.
+
+| Constant | Value | Meaning |
+| --- | --- | --- |
+| `IRRIGATION_GAP` | 30 | large-farm irrigation minus smallholder irrigation, in points |
+| `IRRIGATION_SSF_MAX` | 15 | smallholder irrigation must be under this percent |
+| `SEED_GAP` | 25 | Table 20 gap, all crops, in points |
+| `SEED_LEAD` | 5 | if seed's lead over irrigation is smaller than this, irrigation stays |
+| `FERTILIZER_GAP` | 15 | Table 25 gap that gets fertilizer named |
+
+A district is an irrigation candidate when both irrigation figures exist, the gap is at least 30 points, and fewer than 15% of smallholders irrigate. It becomes the action only when the district's rainfall is below the median. Seed fires when the Table 20 gap is at least 25 points. If both fire, the larger gap is the action, unless seed leads by less than 5 points. A blank large-farm cell cannot open a gap.
+
+`classify(cells, district, rainfall_below_median)` returns a `Decision`. `classify_all(cells, rainfall)` runs all 30 districts.
+
+## Results with the committed files
+
+- **Irrigation, 7 districts:** Gatsibo, Kayonza, Kicukiro, Kirehe, Ngoma, Nyagatare, Rwamagana.
+- **All-crop seed, 19 districts.**
+- **No action, 4 districts:**
+  - Nyarugenge and Karongi have a blank large-farm cell, so no gap can be computed.
+  - In Nyanza and Rusizi, at least 15% of smallholders already irrigate, and the seed gap is under 25 points.
+
+Ten districts meet the irrigation numbers. Rainfall removes Karongi, Nyamasheke, and Nyamagabe, which are wetter than the median.
+
+Some results sit one tenth of a point from a cutoff:
+
+- Kirehe smallholder irrigation is 14.9%, against the 15% line.
+- Muhanga is 15.2%, so it is not a candidate.
+- Gakenke's irrigation gap is 28.7 points, against 30.
+- Rwamagana's seed gap is 24.5 points, against 25.
+
+Seed fires in 19 districts and fertilizer is named in 25, because large farms report high input use almost everywhere. Read those labels as the common case, not as a finding specific to one district. The cutoffs were written into the evidence contract before this rainfall file was computed, and they have not been tuned to its results.
+
+## What this project does not claim
+
+- No maize variety. The survey records improved or traditional seed, not WH 403, WH 605, or WH 507.
+- No farmer satisfaction score.
+- No learned score of seed against soil and fertilizer.
+- No district store or post-harvest ranking. Table 16 puts maize post-harvest loss at 0.3% of use, one national row.
+- No national rate copied onto a district.
+- No re-estimate of the NST2 irrigated-hectare total.
+- No Season B or Season C figure in place of a Season A cell.
+
+## The evidence contract
+
+[docs/Umusaruro-evidence-contract.pdf](docs/Umusaruro-evidence-contract.pdf) locks the product, with every source link. The editable copy is [docs/Umusaruro-evidence-contract.docx](docs/Umusaruro-evidence-contract.docx). A screen may show a number only when the contract names its survey, table, and year. Changing a cutoff means changing the contract first.
+
+## Second-person check
+
+Each cell a screen can show must be signed by a person against the printed PDF. A cell counts as checked only when that person's typed value matches the file. They type blind: the sign-off sheet does not show the stored value.
+
+`data/season_a_2026/signoff.csv` lists 346 cells. They cover Table 13 maize, Table 14 maize, the Table 16 maize loss row, Tables 20, 25, and 31 by farm type, and the Table 21 maize and bush bean rows. Each row gives the PDF page, the table, the printed row, and the printed column.
+
+1. Open the [Season A 2026 report](https://statistics.gov.rw/sites/default/files/documents/2026-04/SAS%202026%20Season%20A%20_Final%20Report.pdf). Table 13 is on page 39, Table 14 on page 40, Table 16 on page 42, Table 20 on page 46, Table 21 on page 47, Table 25 on page 50, and Table 31 on page 55.
+2. Open `signoff.csv` in a spreadsheet. For each row, type the number you see in `value_on_page`, exactly as printed. Commas are fine. Type `-` for a dash, an empty column, or a district with no row.
+3. Fill `checker` with your name and `checked_on` with the date as `YYYY-MM-DD`.
+4. Run `python3 tools/apply_signoff.py`. Matching cells are marked `checked=true` in `cells.csv`. If any typed value disagrees, the script prints it and writes nothing. Look at the PDF again: either the typing or the transcription is wrong.
+5. Commit both files on a branch and open a merge request. The pipeline fails if a typed value disagrees or if a cell is marked checked without a matching signature.
+
+Two people can split the work by table. The sheet can be filled over several sittings. Rows left blank stay unchecked.
+
+## Repository layout
+
+| Path | Contents |
+| --- | --- |
+| `docs/` | evidence contract (PDF and DOCX) and its generator |
+| `data/season_a_2026/cells.csv` | transcribed Season A 2026 cells |
+| `data/season_a_2026/signoff.csv` | second-person sign-off sheet |
+| `data/chirps/season_a_2026_rainfall.csv` | district rainfall totals |
+| `umusaruro/cells.py` | cell loader; blanks raise `BlankCell` |
+| `umusaruro/rainfall.py` | rainfall loader |
+| `umusaruro/rules.py` | cutoffs and `classify` |
+| `umusaruro/signoff.py` | sign-off sheet and review |
+| `tools/` | transcription, rainfall, and sign-off scripts |
+| `tests/` | unit tests |
+
+## Running it
+
+The tests need only the Python standard library:
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+To rebuild the cell file from the NISR PDF:
 
 ```bash
 pdftotext -layout "SAS 2026 Season A _Final Report.pdf" /tmp/sas2026a.txt
 python3 tools/transcribe_season_a.py /tmp/sas2026a.txt
 ```
 
-The script refuses to write the file if the contract cells do not match.
-
-### Rainfall gate
-
-`data/chirps/season_a_2026_rainfall.csv` holds one CHIRPS v2.0 total per district for September 2025 through February 2026. `umusaruro/rainfall.py` loads it. A district's total is the mean of the six-month sums at the 0.05° grid cells whose centres fall inside the district. The `cells` column says how many cells that is. Kicukiro rests on 7 cells and Nyarugenge on 2, so read those totals as thin.
-
-The median of the 30 totals is 689.25 mm. 15 districts are below it. Rainfall is a gate on irrigation only. It never replaces a NISR cell, and it is not the farmer's reason for irrigating or not.
-
-District boundaries are the geoBoundaries ADM2 file for Rwanda, built from Open Data Rwanda, CC BY 4.0. The rasters and the boundary file are not committed. To rebuild the totals, download the six monthly Africa files from the [CHIRPS v2.0 folder](https://data.chc.ucsb.edu/products/CHIRPS-2.0/africa_monthly/tifs/) and the boundary file listed by the [geoBoundaries API](https://www.geoboundaries.org/api/current/gbOpen/RWA/ADM2/), then:
+To rebuild the rainfall totals, download the six monthly files (`chirps-v2.0.2025.09.tif.gz` through `chirps-v2.0.2026.02.tif.gz`) and the geoBoundaries GeoJSON into `/tmp/chirps`, then:
 
 ```bash
 python3 -m venv .venv-geo
@@ -66,69 +204,56 @@ python3 -m venv .venv-geo
 
 The script stops if a district has no grid cell inside it, if a cell has no data, or if a boundary name differs from the Season A district names.
 
-## Rules
-
-`umusaruro/rules.py` holds the team cutoffs. They are not NISR thresholds.
-
-| Constant | Value | Meaning |
-| --- | --- | --- |
-| `IRRIGATION_GAP` | 30 | large-farm irrigation minus smallholder irrigation, in points |
-| `IRRIGATION_SSF_MAX` | 15 | smallholder irrigation must be under this percent |
-| `SEED_GAP` | 25 | Table 20, all crops, percentage of farmers |
-| `SEED_LEAD` | 5 | if seed's lead over irrigation is smaller than this, irrigation stays |
-| `FERTILIZER_GAP` | 15 | Table 25 lag that gets fertilizer named on the sheet |
-
-Irrigation is a candidate only when both irrigation numbers exist, the gap is at least 30 points, and the smallholder rate is under 15%. It becomes the action only when `rainfall_below_median` is true. Seed fires when the Table 20 gap is at least 25 points. If both fire, the larger gap is the action, unless seed leads by less than 5 points. Fertilizer is named beside the action. It does not replace it. A blank large-farm cell cannot open a gap.
-
-`classify(cells, geography, rainfall_below_median=None)` returns a `Decision`. Seed on that decision means all crops, not maize seed. `classify_all(cells, rainfall)` runs every district with its CHIRPS flag.
-
-With the committed files, the result is:
-
-- Irrigation, 7 districts: Gatsibo, Kayonza, Kicukiro, Kirehe, Ngoma, Nyagatare, Rwamagana.
-- All-crop seed, 19 districts.
-- No action, 4 districts. Nyarugenge and Karongi have a blank large-farm cell. Nyanza and Rusizi already have smallholder irrigation at or above 15%, and their seed gaps are under 25 points.
-
-Ten districts meet the irrigation arithmetic. Rainfall removes Karongi, Nyamasheke, and Nyamagabe, which are wetter than the median. Gatsibo has both gaps open and keeps irrigation, because its seed gap, 51.8 points, is smaller than its irrigation gap, 55.5.
-
-Seed fires in most districts because large farms report high improved-seed use almost everywhere. Read the seed label as the common case, not a district-specific finding. Fertilizer is named in 25 districts for the same reason.
-
-## Branches
-
-`main` is the line we submit. `dev` is where merge requests land. Work goes on its own branch, then opens a merge request into `dev`. `dev` merges into `main` when a phase is accepted.
-
-Pipelines run on merge requests and on pushes to `dev` and `main`. A push to a feature branch does not start a pipeline. The current job compiles the Python modules and runs the unit tests. It also checks that both copies of the evidence contract are in the tree.
-
-## Tests
-
-From the repository root, with the standard library only:
+To regenerate the evidence contract:
 
 ```bash
-python3 -m unittest discover -s tests -v
+python3 -m venv .venv
+.venv/bin/pip install python-docx fpdf2
+.venv/bin/python docs/build_evidence_contract.py
 ```
 
-`tests/test_cells.py` checks that the national maize and irrigation figures reproduce, and that a blank cannot be read as zero. `tests/test_rules.py` checks Nyagatare, Kirehe, Kamonyi, Gakenke, Ngoma, a blank large-farm cell, and the cutoffs that sit one tenth of a point away from a different result. `tests/test_rainfall.py` checks the 30 totals, the median, Kicukiro's 7 cells, and the seven irrigation districts.
+## Workflow
 
-The tests read the committed CSV files. They do not need rasterio.
+`main` is the line we submit. `dev` is where merge requests land. Each piece of work goes on its own branch and opens a merge request into `dev`. `dev` merges into `main` when a phase is accepted.
+
+GitLab pipelines run on merge requests and on pushes to `dev` and `main`. The job compiles the Python modules, runs the unit tests, and checks that both copies of the evidence contract are present.
 
 ## Where the work stands
 
-1. Evidence contract. On `main`.
-2. Season A cell file. On `main`. Second-person sign-off is still open. The CHIRPS rainfall file is computed.
-3. Rules module, in `umusaruro/rules.py`. With rainfall in, no district is left unresolved.
-4. Django application: map, district page, method page. Not started. A statistic will not render without survey, table, and year.
-5. Season B 2026, loaded beside Season A. Not started. Season B irrigation is workbook Table 29, and that sheet's footer still says SAS 2025. No Season B irrigation cell is shown until that footer is resolved.
-6. Public repository, deployed link, and a disclosure of model assistance. Deadline 30 October 2026, 23:59.
+| Phase | Status |
+| --- | --- |
+| 1. Evidence contract | done, on `main` |
+| 2. Season A cell file | on `main`; second-person sign-off open |
+| 2b. Rainfall gate | computed; restored to `dev` by merge request !6 |
+| 3. Rules | on `dev` |
+| 4. Django application: map, district page, method page | not started |
+| 5. Season B 2026 beside Season A | not started |
+| 6. Public repository, deployed link, submission | due 23:59, 30 October 2026 |
 
 ## Sources
 
-The contract lists every link. The ones the code reads now are:
+Primary:
 
-- [SAS Season A 2026](https://statistics.gov.rw/sites/default/files/documents/2026-04/SAS%202026%20Season%20A%20_Final%20Report.pdf)
-- [PSTA 5, abridged](https://www.minagri.gov.rw/fileadmin/user_upload/Minagri/Publications/Policies_and_strategies/PSTA_5_Abridged_version_Final.pdf)
-- [CHIRPS v2.0 Africa monthly](https://data.chc.ucsb.edu/products/CHIRPS-2.0/africa_monthly/tifs/)
-- [geoBoundaries Rwanda ADM2](https://www.geoboundaries.org/api/current/gbOpen/RWA/ADM2/)
 - [NISR 2026 Big Data Hackathon](https://statistics.gov.rw/about/hackathon/2026-hackathon-competition)
+- [SAS Season A 2026, full report](https://statistics.gov.rw/sites/default/files/documents/2026-04/SAS%202026%20Season%20A%20_Final%20Report.pdf)
+- [SAS Season B 2026, publication page](https://statistics.gov.rw/statistical-publications/agriculture-environment/seasonal-agricultural-survey-season-b-2026)
+- [SAS 2025 annual report](https://statistics.gov.rw/sites/default/files/documents/2025-12/SAS%202025%20Final%20report.pdf)
+- [SAS 2025 microdata catalog](https://microdata.statistics.gov.rw/index.php/catalog/124)
+- [PSTA 5, abridged](https://www.minagri.gov.rw/fileadmin/user_upload/Minagri/Publications/Policies_and_strategies/PSTA_5_Abridged_version_Final.pdf)
+- [NST2 2024–2029, abridged](https://www.minecofin.gov.rw/fileadmin/user_upload/Minecofin/Publications/STRATEGIES/NST_2/NST2_2024-2029_Abridged.pdf)
+- [Resolutions of the 20th Umushyikirano](https://www.umushyikirano.gov.rw/fileadmin/user_upload/Umushyikirano/Imyanzuro/Resolutions_20th_UMUSHYIKIRANO_-_17_Feb_26.pdf)
+- [Agricultural Household Survey 2024](https://statistics.gov.rw/sites/default/files/documents/2025-10/AHS%202024_Main%20report.pdf)
+- [CHIRPS](https://www.chc.ucsb.edu/data/chirps) and the [v2.0 Africa monthly files](https://data.chc.ucsb.edu/products/CHIRPS-2.0/africa_monthly/tifs/)
+- [geoBoundaries, Rwanda ADM2](https://www.geoboundaries.org/api/current/gbOpen/RWA/ADM2/)
+- [RAB, Rwanda Soil Information System launch](https://www.rab.gov.rw/1-1/news-details/rab-launches-rwanda-digital-soil-information-system-to-improve-agricultural-productivity)
 
-## Model assistance
+Secondary. News reports of public sessions. They are not survey cells.
 
-Drafting, transcription checks, and the rules module used model assistance. The competition requires that disclosure in the submission. The cells still have to be signed by a person against the printed tables.
+- [KT Press, 23 March 2026, Gako retreat](https://www.ktpress.rw/2026/03/kagame-criticizes-slow-progress-in-agriculture-urges-shift-from-promises-to-action/)
+- [AllAfrica, 29 June 2026, Parliament on the maize target](https://allafrica.com/stories/202606300076.html)
+
+## Model assistance and ownership
+
+Drafting, transcription, the rainfall script, and the rules module used model assistance. The competition requires that disclosure. Every cell a screen shows still has to be signed by a person against the printed table.
+
+Under the hackathon rules, intellectual property in the submission transfers to NISR.

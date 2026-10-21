@@ -60,13 +60,12 @@ class SeasonACellsTest(unittest.TestCase):
             with self.assertRaises(BlankCell):
                 row.number()
 
-    def test_every_cell_names_its_source_and_is_unchecked(self):
+    def test_every_cell_names_its_source(self):
         for row in self.cells.rows:
             self.assertEqual(row.survey, "SAS")
             self.assertEqual(row.season, "A")
             self.assertEqual(row.year, "2026")
             self.assertTrue(row.source_url.startswith("https://statistics.gov.rw/"))
-            self.assertFalse(row.checked)
             self.assertIn(row.printed, {"number", "dash", "empty", "absent"})
 
 
