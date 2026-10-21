@@ -21,7 +21,7 @@ evidence:
   stage: test
   image: python:3.12-slim
   script:
-    - python -m py_compile docs/build_evidence_contract.py tools/transcribe_season_a.py tools/chirps_gate.py umusaruro/cells.py umusaruro/rules.py umusaruro/rainfall.py
+    - python -m py_compile docs/build_evidence_contract.py tools/transcribe_season_a.py umusaruro/cells.py umusaruro/rules.py
     - python -m unittest discover -s tests
     - test -f docs/Umusaruro-evidence-contract.docx
     - test -f docs/Umusaruro-evidence-contract.pdf

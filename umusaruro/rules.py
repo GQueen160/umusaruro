@@ -12,7 +12,6 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from umusaruro.cells import BlankCell, Cells
-from umusaruro.rainfall import Rainfall
 
 IRRIGATION_GAP = Decimal("30")
 IRRIGATION_SSF_MAX = Decimal("15")
@@ -104,10 +103,3 @@ def classify(cells: Cells, geography: str, rainfall_below_median: bool | None = 
         action=action,
         unresolved=unresolved,
     )
-
-
-def classify_all(cells: Cells, rainfall: dict[str, Rainfall]) -> dict[str, Decision]:
-    return {
-        district: classify(cells, district, gate.below_median)
-        for district, gate in rainfall.items()
-    }
