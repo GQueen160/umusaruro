@@ -50,7 +50,21 @@ python3 tools/transcribe_season_a.py /tmp/sas2026a.txt
 
 The script refuses to write the file if the contract cells do not match.
 
-CHIRPS rainfall for September 2025 through February 2026 is not in the cell file yet. Until it is, an irrigation candidate stays unresolved.
+### Rainfall gate
+
+`data/chirps/season_a_2026_rainfall.csv` holds one CHIRPS v2.0 total per district for September 2025 through February 2026. `umusaruro/rainfall.py` loads it. A district's total is the mean of the six-month sums at the 0.05° grid cells whose centres fall inside the district. The `cells` column says how many cells that is. Kicukiro rests on 7 cells and Nyarugenge on 2, so read those totals as thin.
+
+The median of the 30 totals is 689.25 mm. 15 districts are below it. Rainfall is a gate on irrigation only. It never replaces a NISR cell, and it is not the farmer's reason for irrigating or not.
+
+District boundaries are the geoBoundaries ADM2 file for Rwanda, built from Open Data Rwanda, CC BY 4.0. The rasters and the boundary file are not committed. To rebuild the totals, download the six monthly Africa files from the [CHIRPS v2.0 folder](https://data.chc.ucsb.edu/products/CHIRPS-2.0/africa_monthly/tifs/) and the boundary file listed by the [geoBoundaries API](https://www.geoboundaries.org/api/current/gbOpen/RWA/ADM2/), then:
+
+```bash
+python3 -m venv .venv-geo
+.venv-geo/bin/pip install rasterio shapely numpy
+.venv-geo/bin/python tools/chirps_gate.py /tmp/chirps /tmp/chirps/rwa_adm2.geojson
+```
+
+The script stops if a district has no grid cell inside it, if a cell has no data, or if a boundary name differs from the Season A district names.
 
 ## Rules
 
@@ -66,7 +80,17 @@ CHIRPS rainfall for September 2025 through February 2026 is not in the cell file
 
 Irrigation is a candidate only when both irrigation numbers exist, the gap is at least 30 points, and the smallholder rate is under 15%. It becomes the action only when `rainfall_below_median` is true. Seed fires when the Table 20 gap is at least 25 points. If both fire, the larger gap is the action, unless seed leads by less than 5 points. Fertilizer is named beside the action. It does not replace it. A blank large-farm cell cannot open a gap.
 
-`classify(cells, geography, rainfall_below_median=None)` returns a `Decision`. Seed on that decision means all crops, not maize seed.
+`classify(cells, geography, rainfall_below_median=None)` returns a `Decision`. Seed on that decision means all crops, not maize seed. `classify_all(cells, rainfall)` runs every district with its CHIRPS flag.
+
+With the committed files, the result is:
+
+- Irrigation, 7 districts: Gatsibo, Kayonza, Kicukiro, Kirehe, Ngoma, Nyagatare, Rwamagana.
+- All-crop seed, 19 districts.
+- No action, 4 districts. Nyarugenge and Karongi have a blank large-farm cell. Nyanza and Rusizi already have smallholder irrigation at or above 15%, and their seed gaps are under 25 points.
+
+Ten districts meet the irrigation arithmetic. Rainfall removes Karongi, Nyamasheke, and Nyamagabe, which are wetter than the median. Gatsibo has both gaps open and keeps irrigation, because its seed gap, 51.8 points, is smaller than its irrigation gap, 55.5.
+
+Seed fires in most districts because large farms report high improved-seed use almost everywhere. Read the seed label as the common case, not a district-specific finding. Fertilizer is named in 25 districts for the same reason.
 
 ## Branches
 
@@ -82,13 +106,15 @@ From the repository root, with the standard library only:
 python3 -m unittest discover -s tests -v
 ```
 
-`tests/test_cells.py` checks that the national maize and irrigation figures reproduce, and that a blank cannot be read as zero. `tests/test_rules.py` checks Nyagatare, Kirehe, Kamonyi, Gakenke, Ngoma, a blank large-farm cell, and the cutoffs that sit one tenth of a point away from a different result.
+`tests/test_cells.py` checks that the national maize and irrigation figures reproduce, and that a blank cannot be read as zero. `tests/test_rules.py` checks Nyagatare, Kirehe, Kamonyi, Gakenke, Ngoma, a blank large-farm cell, and the cutoffs that sit one tenth of a point away from a different result. `tests/test_rainfall.py` checks the 30 totals, the median, Kicukiro's 7 cells, and the seven irrigation districts.
+
+The tests read the committed CSV files. They do not need rasterio.
 
 ## Where the work stands
 
 1. Evidence contract. On `main`.
-2. Season A cell file. On `main`. Second-person sign-off and the CHIRPS file are still open.
-3. Rules module, in `umusaruro/rules.py`. Irrigation stays unresolved until a caller passes the CHIRPS flag. The rainfall file itself is not computed yet.
+2. Season A cell file. On `main`. Second-person sign-off is still open. The CHIRPS rainfall file is computed.
+3. Rules module, in `umusaruro/rules.py`. With rainfall in, no district is left unresolved.
 4. Django application: map, district page, method page. Not started. A statistic will not render without survey, table, and year.
 5. Season B 2026, loaded beside Season A. Not started. Season B irrigation is workbook Table 29, and that sheet's footer still says SAS 2025. No Season B irrigation cell is shown until that footer is resolved.
 6. Public repository, deployed link, and a disclosure of model assistance. Deadline 30 October 2026, 23:59.
@@ -99,6 +125,8 @@ The contract lists every link. The ones the code reads now are:
 
 - [SAS Season A 2026](https://statistics.gov.rw/sites/default/files/documents/2026-04/SAS%202026%20Season%20A%20_Final%20Report.pdf)
 - [PSTA 5, abridged](https://www.minagri.gov.rw/fileadmin/user_upload/Minagri/Publications/Policies_and_strategies/PSTA_5_Abridged_version_Final.pdf)
+- [CHIRPS v2.0 Africa monthly](https://data.chc.ucsb.edu/products/CHIRPS-2.0/africa_monthly/tifs/)
+- [geoBoundaries Rwanda ADM2](https://www.geoboundaries.org/api/current/gbOpen/RWA/ADM2/)
 - [NISR 2026 Big Data Hackathon](https://statistics.gov.rw/about/hackathon/2026-hackathon-competition)
 
 ## Model assistance
