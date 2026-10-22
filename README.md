@@ -179,9 +179,26 @@ Some results sit one tenth of a point from a cutoff:
 
 Seed fires in 19 districts and fertilizer is named in 26, because large farms report high input use almost everywhere. Of those 26, 24 sit beside an action; in Nyanza and Karongi, fertilizer is named although no action is. Read those labels as the common case, not as a finding specific to one district. The cutoffs were written into the evidence contract before this rainfall file was computed, and they have not been tuned to its results.
 
+## The engine
+
+The engine, in `engine/`, reads any district table it is given, for any crop, and keeps every value with the row and column it came from. A person confirms what the engine proposes before anything is published.
+
+1. **Read.** `engine/reader.py` opens an `.xlsx` or `.csv` file and returns each sheet as rows, as published. Old `.xls` files are refused with a reason.
+2. **Propose.** `engine/detect.py` looks at every sheet. It finds the title, the year and season, and the rows that name a district. It then reads the header, forward-filling merged cells, and proposes what each column carries: a crop, a measure, a farm type (all, small-scale, large-scale), and a basis (share of farmers, plots, or land). Two layouts are understood. In the wide layout, the NISR one, districts run down the side and crops or farm types run across. In the long layout, there is one row per district (and year, crop) and one column per measure. Every skipped column gets a reason, for example "a total of several crops" or "the 'no' or 'traditional' share". A table whose title names nothing the engine reads is listed as not recognised. It is never guessed at.
+3. **Confirm.** The proposals are stored. A person checks them, then publishes. The person's name is stored with the dataset.
+4. **Store.** Each value becomes one row in the `Observation` table: year, season, NISR district code, crop, measure, farm type, basis, the value, the raw cell text, and the sheet row and column. An empty cell, a dash, and a workbook zero (which NISR prints as a dash) are stored with no value and their reason. A file is identified by its SHA-256, so the same file cannot be loaded twice.
+
+The words the engine recognises (crops, measures, farm types, and the table titles to skip, such as "source of", "type of", and "degree of") are plain lists in `engine/vocab.py`, so a reviewer can read why a column was read as it was.
+
+`python manage.py engine_load_sas --confirm-as "Full Name"` loads the nine SAS workbooks in `data/raw/sas/`. Each is checked against its SHA-256 in `MANIFEST.csv` and goes through the same detector as an upload. With the committed files, this gives 78,845 observations from 192 tables; 66,212 of them carry a number and the rest are blanks with their reason. They cover yield, cultivated and harvested area, and production for 23 crops and crop groups, and the use of improved seed, organic and inorganic fertilizer, pesticides, irrigation, erosion control, mechanization, and agroforestry, in Seasons A, B, and C, from 2019 to 2026.
+
+The engine is checked against the hand-verified back-series. `tests/test_engine.py` reads every workbook the way an upload is read and requires each of the 2,735 values in `data/history/season_a.csv` to come out the same, blank reason included. The 7 districts that history records as absent from a table must produce no value.
+
+The upload screens, the dataset list, and the per-crop analysis come in the next merge requests.
+
 ## The application
 
-The sheet is a Django site in `sheet/`. It reads the committed CSV files when it starts. It has no database, no login, and no forms.
+The sheet is a Django site in `sheet/`. The district sheet reads the committed CSV files when it starts. The engine's datasets and observations are kept in SQLite under `var/`, which git ignores.
 
 | Page | What it shows |
 | --- | --- |
@@ -279,6 +296,10 @@ To resolve the Table 29 footer, open page 57 and read the line under the table. 
 | `umusaruro/footers.py` | whether the Table 29 footer has been resolved by a person |
 | `umusaruro/history.py` | back-series loader; blanks raise `BlankCell` |
 | `umusaruro/xlsx.py` | standard-library XLSX reader used by the tools |
+| `engine/vocab.py` | crops, measures, farm types, and title rules the engine recognises |
+| `engine/reader.py`, `engine/detect.py` | read a file; propose how each table is read; read it into tidy rows (no Django) |
+| `engine/models.py`, `engine/ingest.py` | datasets, tables, observations, crop targets; register and publish |
+| `engine/management/commands/engine_load_sas.py` | load the SAS workbooks in `data/raw/sas/` |
 | `config/` | Django settings, URLs, and WSGI entry point |
 | `sheet/sheet.py` | builds each page's figures from the cells, rainfall, and rules |
 | `sheet/stats.py` | `Source` and `Stat`: a number cannot exist without its source |
@@ -296,14 +317,21 @@ To run the site locally:
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
-DJANGO_DEBUG=1 .venv/bin/python manage.py runserver
+export DJANGO_DEBUG=1
+.venv/bin/python manage.py migrate
+.venv/bin/python manage.py engine_load_sas --confirm-as "Your Name"
+.venv/bin/python manage.py runserver
 ```
+
+The database and uploads go in `var/`; set `UMUSARURO_VAR` to put them elsewhere. `engine_load_sas` takes about ten seconds and skips workbooks already loaded.
 
 Then open <http://127.0.0.1:8000/>. `DJANGO_DEBUG=1` is for local work only.
 
 In production, set `DJANGO_SECRET_KEY` and `DJANGO_ALLOWED_HOSTS` (comma-separated host names), then run:
 
 ```bash
+python manage.py migrate
+python manage.py engine_load_sas --confirm-as "Full Name"
 python manage.py collectstatic --noinput
 gunicorn config.wsgi
 ```
@@ -319,7 +347,7 @@ python3 -m unittest discover -s tests -v
 The site tests need Django:
 
 ```bash
-DJANGO_DEBUG=1 .venv/bin/python manage.py test sheet
+DJANGO_DEBUG=1 .venv/bin/python manage.py test engine sheet
 ```
 
 To rebuild the map outlines:
@@ -377,7 +405,7 @@ python3 -m venv .venv
 GitLab pipelines run on merge requests and on pushes to `dev` and `main`. There are two jobs:
 
 - `evidence` compiles the Python modules, checks every raw file against `data/raw/MANIFEST.csv`, runs the unit tests (one rebuilds the back-series from the raw workbooks and requires the committed file), and checks that both copies of the evidence contract are present.
-- `app` installs `requirements.txt` and runs the site the way it is deployed, with `DEBUG` off. It runs Django's system check, collects the static files, and runs the site tests.
+- `app` installs `requirements.txt` and runs the site the way it is deployed, with `DEBUG` off. It runs Django's system check, collects the static files, and runs the engine and site tests. Those tests load all nine SAS workbooks into a test database.
 
 ## Where the work stands
 
@@ -391,6 +419,9 @@ GitLab pipelines run on merge requests and on pushes to `dev` and `main`. There 
 | 5. Season B 2026 beside Season A | built; Table 29 footer confirmed; Season B sign-off waits for a person |
 | 6. Data pipeline: raw-file manifest, NISR codes, 2019–2026 back-series | on `dev` |
 | 7. Map layers, side panel, and trend charts from the back-series | built |
+| 9. Engine core: reader, detector, models, SAS preload | built |
+| 10. Engine screens: dataset list, upload, review and confirm | next |
+| 11. Per-crop analysis: drivers with validation, reports, comparison, map crop filter | after 10 |
 | 8. Public repository, deployed link, submission | due 23:59, 30 October 2026 |
 
 ## Sources

@@ -1,7 +1,7 @@
 # Pipelines run on merge requests and on pushes to dev and main.
 # Feature-branch pushes do not, so CI minutes stay on the reviews.
 # evidence: the raw-file manifest, the evidence contract, the cell files, the back-series, and the rules.
-# app: the Django sheet, run with DEBUG off as it is deployed.
+# app: the Django sheet and engine, run with DEBUG off as it is deployed.
 
 stages:
   - test
@@ -21,7 +21,7 @@ evidence:
   stage: test
   image: python:3.12-slim
   script:
-    - python -m py_compile docs/build_evidence_contract.py tools/*.py umusaruro/*.py
+    - python -m py_compile docs/build_evidence_contract.py tools/*.py umusaruro/*.py engine/*.py
     - python tools/raw_manifest.py
     - python -m unittest discover -s tests
     - test -f docs/Umusaruro-evidence-contract.docx
@@ -43,4 +43,4 @@ app:
     - pip install -r requirements.txt
     - python manage.py check
     - python manage.py collectstatic --noinput
-    - python manage.py test sheet
+    - python manage.py test engine sheet
