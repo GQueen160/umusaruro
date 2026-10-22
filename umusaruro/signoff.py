@@ -9,15 +9,18 @@ from __future__ import annotations
 
 import csv
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
-from umusaruro.cells import Cell, Cells
+from umusaruro.cells import CSV_PATH, SEASON_B_PATH, Cell, Cells
 
 SHEET_PATH = Path(__file__).resolve().parents[1] / "data" / "season_a_2026" / "signoff.csv"
+SEASON_B_SHEET_PATH = Path(__file__).resolve().parents[1] / "data" / "season_b_2026" / "signoff.csv"
 
 PAGES = {"13": 39, "14": 40, "16": 42, "20": 46, "21": 47, "25": 50, "31": 55}
+SEASON_B_PAGES = {"18": 46, "23": 51, "29": 57}
 
 DISTRICTS = [
     "Nyarugenge", "Gasabo", "Kicukiro", "Nyanza", "Gisagara", "Nyaruguru", "Huye",
@@ -80,12 +83,26 @@ def screen_cells():
         yield "31", row, column, key
 
 
-def blank_sheet() -> list[dict[str, str]]:
+def season_b_screen_cells():
+    """Season B cells the district and method pages read: district SSF and LSF, and the national row."""
+    tables = [
+        ("18", "all_crops", "farmers", "Percentage of farmers who used improved seeds"),
+        ("23", "all_crops", "farmers", "Percentage of farmers who used inorganic fertilizers"),
+        ("29", "", "irrigation", "Farmers who practiced irrigation (%)"),
+    ]
+    for table, crop, measure, column in tables:
+        for geography in DISTRICTS + ["National"]:
+            farmers = FARMER_COLUMNS if geography == "National" else {"ssf": "SSF", "lsf": "LSF"}
+            for farmer, label in farmers.items():
+                yield table, geography, f"{column}, {label}", Key(table, geography, farmer, crop, measure)
+
+
+def blank_sheet(cells=screen_cells, pages=PAGES) -> list[dict[str, str]]:
     rows = []
-    for table, row, column, key in screen_cells():
+    for table, row, column, key in cells():
         rows.append(
             {
-                "pdf_page": str(PAGES[table]),
+                "pdf_page": str(pages[table]),
                 "table": table,
                 "row": row,
                 "column": column,
@@ -99,6 +116,24 @@ def blank_sheet() -> list[dict[str, str]]:
             }
         )
     return rows
+
+
+@dataclass(frozen=True)
+class Season:
+    name: str
+    cells_path: Path
+    sheet_path: Path
+    screen: Callable
+    pages: dict[str, int]
+
+    def blank_sheet(self) -> list[dict[str, str]]:
+        return blank_sheet(self.screen, self.pages)
+
+
+SEASONS = [
+    Season("A", CSV_PATH, SHEET_PATH, screen_cells, PAGES),
+    Season("B", SEASON_B_PATH, SEASON_B_SHEET_PATH, season_b_screen_cells, SEASON_B_PAGES),
+]
 
 
 def read_sheet(path: Path = SHEET_PATH) -> list[dict[str, str]]:

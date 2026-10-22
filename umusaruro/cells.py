@@ -1,7 +1,8 @@
-"""Load the Season A 2026 cell file.
+"""Load a cell file: Season A 2026 by default, or Season B 2026.
 
 A blank cell has no value. Reading it as a number fails. Zero is only
-returned when the published table printed a zero.
+returned when the published table printed a zero. Each season loads into
+its own Cells, so a Season B cell can never stand in for a Season A cell.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ from decimal import Decimal
 from pathlib import Path
 
 CSV_PATH = Path(__file__).resolve().parents[1] / "data" / "season_a_2026" / "cells.csv"
+SEASON_B_PATH = Path(__file__).resolve().parents[1] / "data" / "season_b_2026" / "cells.csv"
 
 
 class BlankCell(LookupError):

@@ -58,6 +58,41 @@
     Irrigation also needs fewer smallholders irrigating than the line on the method page.</p>
 </section>
 
+<section class="season-b">
+  <h2><span class="ref">Season B 2026</span> as a check</h2>
+  <p>Season B is the year's second season, with its own report and its own table numbers. The same cutoffs are applied
+    to it here, without the rainfall gate. It does not change the action, which comes from Season A only.
+    <a href="{% url 'method' %}#season-b">How Season B is read</a>.</p>
+  {% if s.season_b_note %}<p class="b-note">{% parts s.season_b_note %}</p>{% endif %}
+  <div class="table-wrap">
+  <table class="levers">
+    <thead>
+      <tr><th scope="col">Lever, percentage of farmers</th><th scope="col" class="num">Smallholders</th>
+        <th scope="col" class="num">Large farms</th><th scope="col" class="num">Season B gap</th>
+        <th scope="col" class="num">Season A gap</th><th scope="col">Would pass in Season B</th></tr>
+    </thead>
+    <tbody>
+      {% for row in s.season_b %}
+      <tr>
+        <th scope="row">{{ row.label }}</th>
+        {% if row.withheld %}
+        <td colspan="3" class="withheld">Not shown until a second person confirms this table's footer</td>
+        {% else %}
+        <td class="num">{% stat row.small %}</td>
+        <td class="num">{% stat row.large %}</td>
+        <td class="num">{% stat row.gap %}</td>
+        {% endif %}
+        <td class="num">{% stat row.season_a_gap %}</td>
+        <td>{% if row.withheld %}not shown{% elif row.passes is None %}no gap{% elif row.passes %}yes{% else %}no{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="note">The survey samples few large farms in each district, so one farm can move a large-farm percentage a
+    long way between seasons. Read a disagreement as a reason to look closer, not as a correction.</p>
+</section>
+
 <section>
   <h2>Rainfall gate</h2>
   <p>September to February rainfall in {{ s.name }} was {% stat s.rain_total %}, the mean over {% stat s.rain_cells %}

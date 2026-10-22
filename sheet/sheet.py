@@ -1,8 +1,9 @@
-"""What the pages show, built from the cell file, the rainfall file, and the rules.
+"""What the pages show, built from the cell files, the rainfall file, and the rules.
 
-Nothing here reads a number that is not in `cells.csv`, the rainfall file,
+Nothing here reads a number that is not in a cell file, the rainfall file,
 the PSTA 5 milestones, or the rules module. Sentences are lists of strings
-and Stats, so a number never sits in prose without its citation.
+and Stats, so a number never sits in prose without its citation. Actions
+come from Season A only; Season B is read beside it as a check.
 """
 
 from __future__ import annotations
@@ -12,13 +13,15 @@ from decimal import Decimal
 from functools import lru_cache
 
 from umusaruro import cells as cell_file
+from umusaruro import footers
 from umusaruro import rainfall as rainfall_file
 from umusaruro import rules
 from umusaruro.cells import Cell, Cells
 from umusaruro.rules import Decision
-from umusaruro.signoff import screen_cells
+from umusaruro.signoff import screen_cells, season_b_screen_cells
 
-from sheet.stats import CHIRPS, CONTRACT, RULES, SIGNOFF, Stat, in_tonnes, psta, sas_a
+from sheet.stats import (CHIRPS, CONTRACT, FOOTER_CHECK, RULES, RULES_B, SIGNOFF, SIGNOFF_B, Stat, in_tonnes, psta,
+                         sas)
 
 NATIONAL = "National"
 MILESTONES = [("2025/26", Decimal("2.06")), ("2026/27", Decimal("2.26"))]
@@ -26,13 +29,14 @@ ACTION_LABELS = {"irrigation": "Irrigation", "seed": "All-crop improved seed", N
 
 
 def cell_stat(cell: Cell, unit: str) -> Stat:
-    return Stat(cell.value, unit, sas_a(cell.table), cell.printed, cell.checked)
+    return Stat(cell.value, unit, sas(cell.season, cell.table), cell.printed, cell.checked)
 
 
 def gap_stat(large: Cell, small: Cell) -> Stat:
+    source = sas(large.season, large.table)
     if large.value is None or small.value is None:
-        return Stat(None, "points", sas_a(large.table), "derived", large.checked and small.checked)
-    return Stat(large.value - small.value, "points", sas_a(large.table), "derived", large.checked and small.checked)
+        return Stat(None, "points", source, "derived", large.checked and small.checked)
+    return Stat(large.value - small.value, "points", source, "derived", large.checked and small.checked)
 
 
 def constant(value: Decimal, unit: str) -> Stat:
@@ -65,6 +69,19 @@ class Milestone:
 
 
 @dataclass(frozen=True)
+class SeasonBRow:
+    key: str
+    label: str
+    withheld: bool
+    small: Stat | None
+    large: Stat | None
+    gap: Stat | None
+    season_a_gap: Stat
+    cutoff: Stat
+    passes: bool | None
+
+
+@dataclass(frozen=True)
 class DistrictSheet:
     name: str
     slug: str
@@ -82,6 +99,8 @@ class DistrictSheet:
     rain_below: bool
     reason: list[list]
     fertilizer: list
+    season_b: list[SeasonBRow]
+    season_b_note: list | None
     shown: Stat
     checked: Stat
 
@@ -98,15 +117,28 @@ def data():
     return cells, rain, decisions
 
 
+@lru_cache(maxsize=1)
+def season_b() -> tuple[Cells, bool]:
+    """Season B cells, and whether the Table 29 footer has been resolved by a person."""
+    return cell_file.load(cell_file.SEASON_B_PATH), footers.resolved("29")
+
+
 def districts() -> list[str]:
     return list(data()[2])
 
 
-def _lever_cells(cells: Cells, name: str):
+LEVER_TABLES = {
+    "A": {"irrigation": ("31", "", "irrigation"), "seed": ("20", "all_crops", "farmers"),
+          "fertilizer": ("25", "all_crops", "farmers")},
+    "B": {"irrigation": ("29", "", "irrigation"), "seed": ("18", "all_crops", "farmers"),
+          "fertilizer": ("23", "all_crops", "farmers")},
+}
+
+
+def _lever_cells(cells: Cells, name: str, season: str = "A"):
     return {
-        "irrigation": (cells.get("31", name, "ssf", "", "irrigation"), cells.get("31", name, "lsf", "", "irrigation")),
-        "seed": (cells.get("20", name, "ssf", "all_crops", "farmers"), cells.get("20", name, "lsf", "all_crops", "farmers")),
-        "fertilizer": (cells.get("25", name, "ssf", "all_crops", "farmers"), cells.get("25", name, "lsf", "all_crops", "farmers")),
+        key: (cells.get(table, name, "ssf", crop, measure), cells.get(table, name, "lsf", crop, measure))
+        for key, (table, crop, measure) in LEVER_TABLES[season].items()
     }
 
 
@@ -179,6 +211,57 @@ def _fertilizer(d: Decision, lever: Lever) -> list:
     return ["Inorganic fertilizer is not named: the gap, ", lever.gap, ", is under ", lever.cutoff, "."]
 
 
+def season_b_passes(key: str, small: Cell, large: Cell) -> bool | None:
+    """The Season A cutoffs applied to Season B cells. No rainfall gate: the rainfall window is Season A's."""
+    if small.value is None or large.value is None:
+        return None
+    gap = large.value - small.value
+    if key == "irrigation":
+        return gap >= rules.IRRIGATION_GAP and small.value < rules.IRRIGATION_SSF_MAX
+    return gap >= {"seed": rules.SEED_GAP, "fertilizer": rules.FERTILIZER_GAP}[key]
+
+
+def _season_b_rows(name: str, season_a: dict[str, Lever]) -> list[SeasonBRow]:
+    cells_b, irrigation_resolved = season_b()
+    rows = []
+    for key, (small, large) in _lever_cells(cells_b, name, "B").items():
+        label, cutoff = LEVER_LABELS[key]
+        withheld = key == "irrigation" and not irrigation_resolved
+        rows.append(SeasonBRow(
+            key=key,
+            label=label,
+            withheld=withheld,
+            small=None if withheld else cell_stat(small, "%"),
+            large=None if withheld else cell_stat(large, "%"),
+            gap=None if withheld else gap_stat(large, small),
+            season_a_gap=season_a[key].gap,
+            cutoff=constant(cutoff, "points"),
+            passes=None if withheld else season_b_passes(key, small, large),
+        ))
+    return rows
+
+
+LEVER_NOUNS = {"irrigation": "irrigation", "seed": "all-crop seed"}
+
+
+def _season_b_note(d: Decision, rows: list[SeasonBRow]) -> list | None:
+    if d.action is None:
+        return None
+    row = next(r for r in rows if r.key == d.action)
+    noun = LEVER_NOUNS[d.action]
+    if row.withheld:
+        return ["Season B irrigation is not shown until a second person confirms the footer of the irrigation table "
+                "(see the method page)."]
+    if row.passes is None:
+        return [f"In Season B the {noun} gap cannot be computed: ", row.large, " for large farms."]
+    if row.passes:
+        return [f"Season B agrees: the {noun} gap is ", row.gap, ", which also reaches ", row.cutoff, "."]
+    if d.action == "irrigation" and row.small.value >= rules.IRRIGATION_SSF_MAX:
+        return ["Season B differs: ", row.small, " of smallholders irrigated, at or above the ",
+                constant(rules.IRRIGATION_SSF_MAX, "%"), " line."]
+    return [f"Season B differs: the {noun} gap is ", row.gap, ", under ", row.cutoff, "."]
+
+
 def district_sheet(name: str) -> DistrictSheet:
     cells, rain, decisions = data()
     d = decisions[name]
@@ -211,7 +294,9 @@ def district_sheet(name: str) -> DistrictSheet:
                   None if maize.value is None else maize.value >= target * 1000)
         for column, target in MILESTONES
     ]
+    b_rows = _season_b_rows(name, levers)
     stats = [maize, large_maize] + [s for lever in levers.values() for s in (lever.small, lever.large)]
+    stats += [s for row in b_rows if not row.withheld for s in (row.small, row.large)]
     return DistrictSheet(
         name=name,
         slug=slug(name),
@@ -229,6 +314,8 @@ def district_sheet(name: str) -> DistrictSheet:
         rain_below=gate.below_median,
         reason=_reason(d, levers, total, median),
         fertilizer=_fertilizer(d, levers["fertilizer"]),
+        season_b=b_rows,
+        season_b_note=_season_b_note(d, b_rows),
         shown=Stat(Decimal(len(stats)), "survey cells", SIGNOFF, checked=True),
         checked=Stat(Decimal(sum(1 for s in stats if s.checked)), "", SIGNOFF, checked=True),
     )
@@ -317,8 +404,45 @@ def near_cutoffs(within: Decimal = Decimal("2")) -> list[NearCut]:
     return out
 
 
+@dataclass(frozen=True)
+class SeasonBAgreement:
+    action: str
+    label: str
+    withheld: bool
+    agree: Stat
+    total: Stat
+    differ: list[tuple[str, str]]
+    blank: list[tuple[str, str]]
+
+
+def season_b_agreement() -> list[SeasonBAgreement]:
+    cells_a, _rain, decisions = data()
+    cells_b, irrigation_resolved = season_b()
+    out = []
+    for action in ("irrigation", "seed"):
+        named = [name for name, d in decisions.items() if d.action == action]
+        withheld = action == "irrigation" and not irrigation_resolved
+        verdicts = {} if withheld else {
+            name: season_b_passes(action, *_lever_cells(cells_b, name, "B")[action]) for name in named
+        }
+        out.append(SeasonBAgreement(
+            action=action,
+            label=ACTION_LABELS[action],
+            withheld=withheld,
+            agree=Stat(Decimal(sum(1 for v in verdicts.values() if v)), "", RULES_B, checked=True),
+            total=Stat(Decimal(len(named)), "districts", RULES, checked=True),
+            differ=[(n, slug(n)) for n, v in verdicts.items() if v is False],
+            blank=[(n, slug(n)) for n, v in verdicts.items() if v is None],
+        ))
+    return out
+
+
 def method() -> dict:
     cells, rain, _decisions = data()
+    cells_b, irrigation_resolved = season_b()
+    keys_b = [key for *_place, key in season_b_screen_cells()]
+    checked_b = sum(1 for k in keys_b if cells_b.get(k.table, k.geography, k.farmer_type, k.crop, k.measure).checked)
+    footer = footers.read()["29"]
     keys = [key for *_place, key in screen_cells()]
     checked = sum(
         1 for k in keys if cells.get(k.table, k.geography, k.farmer_type, k.crop, k.measure).checked
@@ -342,4 +466,15 @@ def method() -> dict:
         "thin": thin,
         "screen_total": Stat(Decimal(len(keys)), "cells", SIGNOFF, checked=True),
         "screen_checked": Stat(Decimal(checked), "", SIGNOFF, checked=True),
+        "season_b": season_b_agreement(),
+        "season_b_national": [
+            (LEVER_LABELS[key][0], cell_stat(small, "%"), cell_stat(large, "%"))
+            for key, (small, large) in _lever_cells(cells_b, NATIONAL, "B").items()
+            if key != "irrigation" or irrigation_resolved
+        ],
+        "footer": footer,
+        "footer_resolved": irrigation_resolved,
+        "footer_source": FOOTER_CHECK,
+        "screen_total_b": Stat(Decimal(len(keys_b)), "cells", SIGNOFF_B, checked=True),
+        "screen_checked_b": Stat(Decimal(checked_b), "", SIGNOFF_B, checked=True),
     }
