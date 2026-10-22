@@ -1,0 +1,77 @@
+{% extends "sheet/base.html" %}
+{% load stats %}
+{% block title %}{{ s.name }}: Umusaruro{% endblock %}
+{% block content %}
+<nav class="crumbs"><a href="{% url 'overview' %}">All districts</a> / {{ s.name }}</nav>
+<h1>{{ s.name }}</h1>
+
+<section class="action-card action-{{ s.decision.action|default:'none' }}">
+  <p class="eyebrow">Action named by the rules</p>
+  <p class="action-name">{{ s.action_label }}</p>
+  {% for sentence in s.reason %}<p>{% parts sentence %}</p>{% endfor %}
+  <p class="fert-line">{% parts s.fertilizer %}</p>
+  <p class="caveat">A gap compares two kinds of farm in the same district. It is not a forecast of how much yield
+    would rise if the gap closed.</p>
+</section>
+
+<section>
+  <h2>Maize yield, <span class="ref">Season A 2026</span></h2>
+  <dl class="facts">
+    <div><dt>All farms in {{ s.name }}</dt><dd>{% stat s.maize_kg %} = {% stat s.maize_t %}</dd></div>
+    <div><dt>Large farms in {{ s.name }}</dt><dd>{% stat s.large_maize_kg %}{% if not s.large_maize_kg.blank %} = {% stat s.large_maize_t %}{% endif %}</dd></div>
+  </dl>
+  <ul class="milestones">
+    {% for m in s.milestones %}
+    <li class="{% if m.above %}above{% elif m.above is None %}unknown{% else %}below{% endif %}">
+      <span class="ref">PSTA 5</span> milestone for <span class="ref">{{ m.column }}</span>: {% stat m.target %} —
+      {% if m.above %}at or above{% elif m.above is None %}cannot be compared (blank cell){% else %}below{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+
+<section>
+  <h2>Smallholders against large farms in {{ s.name }}</h2>
+  <div class="table-wrap">
+  <table class="levers">
+    <thead>
+      <tr><th scope="col">Lever, percentage of farmers</th><th scope="col">Smallholders</th><th scope="col">Large farms</th>
+        <th scope="col">Gap</th><th scope="col">Rank of the gap</th><th scope="col">Cutoff</th><th scope="col">Passes</th></tr>
+    </thead>
+    <tbody>
+      {% for lever in s.levers %}
+      <tr>
+        <th scope="row">{{ lever.label }}</th>
+        <td class="num">{% stat lever.small %}</td>
+        <td class="num">{% stat lever.large %}</td>
+        <td class="num">{% stat lever.gap %}</td>
+        <td class="num">{% if lever.rank %}{% stat lever.rank %}{% else %}not ranked{% endif %}</td>
+        <td class="num">{% stat lever.cutoff %}</td>
+        <td>{% if lever.fires %}yes{% else %}no{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="note">The first rank is the widest gap among the districts where both cells are printed. Seed and fertilizer
+    cover all crops: the maize-only seed rate is national, with no district column (see the method page).
+    Irrigation also needs fewer smallholders irrigating than the line on the method page.</p>
+</section>
+
+<section>
+  <h2>Rainfall gate</h2>
+  <p>September to February rainfall in {{ s.name }} was {% stat s.rain_total %}, the mean over {% stat s.rain_cells %}
+    whose centres fall inside the district. The median of the districts is {% stat s.rain_median %}, so {{ s.name }} is
+    {% if s.rain_below %}<strong>below</strong>{% else %}<strong>above</strong>{% endif %} the median.
+    Rainfall only decides whether irrigation can be named first. It never replaces a survey cell.</p>
+</section>
+
+<section class="checked">
+  <h2>Second-person check</h2>
+  <p>{% stat s.checked %} of {% stat s.shown %} on this page have been checked by a second person against the printed table.</p>
+</section>
+
+<nav class="others" aria-label="Other districts">
+  {% for name in districts %}<a href="{% url 'district' name|lower %}"{% if name == s.name %} aria-current="page"{% endif %}>{{ name }}</a>{% endfor %}
+</nav>
+{% endblock %}

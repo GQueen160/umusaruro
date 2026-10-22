@@ -1,7 +1,7 @@
 # Pipelines run on merge requests and on pushes to dev and main.
 # Feature-branch pushes do not, so CI minutes stay on the reviews.
-# The job checks the evidence contract and the Season A cell file.
-# Application jobs are added when the Django project exists.
+# evidence: the evidence contract, the Season A cell file, and the rules.
+# app: the Django sheet, run with DEBUG off as it is deployed.
 
 stages:
   - test
@@ -25,3 +25,21 @@ evidence:
     - python -m unittest discover -s tests
     - test -f docs/Umusaruro-evidence-contract.docx
     - test -f docs/Umusaruro-evidence-contract.pdf
+
+app:
+  stage: test
+  image: python:3.12-slim
+  variables:
+    DJANGO_SECRET_KEY: ci-only-not-secret
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  cache:
+    key:
+      files:
+        - requirements.txt
+    paths:
+      - .cache/pip
+  script:
+    - pip install -r requirements.txt
+    - python manage.py check
+    - python manage.py collectstatic --noinput
+    - python manage.py test sheet
