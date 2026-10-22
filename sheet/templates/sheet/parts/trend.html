@@ -1,0 +1,20 @@
+{% load stats %}<section class="trend trend-{{ s.trend.band|default:'unknown' }}">
+  <h2>Maize yield across eight Season A surveys</h2>
+  <p class="trend-line">{% parts s.trend.sentence %}</p>
+  {% include "sheet/parts/chart.html" with c=s.trend.maize rows=s.trend.maize_rows head="Maize yield, all farms, kg/ha" label="Season A maize yield by year for the district and for Rwanda, with the PSTA 5 milestone" %}
+  <p class="note">Values come from NISR's tables workbook for each year; hover a citation for the table. The
+    <span class="ref">2026</span> values equal the printed report. Earlier years have not yet been checked by a second
+    person against the printed reports, so they carry the dotted underline. Survey estimates move between years by
+    sampling alone.</p>
+  {% if levers %}
+  <details class="lever-trends">
+    <summary>Smallholders and large farms on each lever, year by year</summary>
+    {% for lever in s.trend.levers %}
+    <h3>{{ lever.label }}, percentage of farmers</h3>
+    {% include "sheet/parts/chart.html" with c=lever.chart rows=lever.rows head="% of farmers" label=lever.label %}
+    {% endfor %}
+    <p class="note">Large-farm figures rest on few sampled farms per district and are often blank. Table titles and
+      question wording can change between years; the method page lists each table read.</p>
+  </details>
+  {% endif %}
+</section>

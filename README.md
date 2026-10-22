@@ -64,7 +64,7 @@ Each lever has a limit the sheet states plainly.
 | [PSTA 5, abridged results framework](https://www.minagri.gov.rw/fileadmin/user_upload/Minagri/Publications/Policies_and_strategies/PSTA_5_Abridged_version_Final.pdf) | MINAGRI | Maize yield milestones: 1.70 (2023 baseline), 1.87, 2.06, 2.26, 2.49, 2.74 t/ha | the evidence contract |
 | [CHIRPS v2.0, Africa monthly](https://data.chc.ucsb.edu/products/CHIRPS-2.0/africa_monthly/tifs/) | Climate Hazards Center, UC Santa Barbara | Rainfall, September 2025 to February 2026, summed per district | `data/chirps/season_a_2026_rainfall.csv` |
 | [geoBoundaries, Rwanda ADM2](https://www.geoboundaries.org/api/current/gbOpen/RWA/ADM2/) | geoBoundaries, from Open Data Rwanda, CC BY 4.0 | The 30 district boundaries: full detail to sum rainfall, simplified to draw the map | simplified copy in `data/boundaries/rwa_districts.geojson` |
-| SAS tables workbooks, 2019 to 2026 (one per year, listed in `data/raw/MANIFEST.csv`) | NISR, CC BY 4.0 | Season A district maize yield, large-farm maize yield, and farmers using improved seed, inorganic fertilizer, and irrigation, by farm type. Built into a back-series. Not yet on any page. | raw files in `data/raw/sas/`, cleaned in `data/history/season_a.csv` |
+| SAS tables workbooks, 2019 to 2026 (one per year, listed in `data/raw/MANIFEST.csv`) | NISR, CC BY 4.0 | Season A district maize yield, large-farm maize yield, and farmers using improved seed, inorganic fertilizer, and irrigation, by farm type. Built into a back-series, shown as the trend charts and the map's trend layer. The evidence contract does not yet name it; that update is the next step. | raw files in `data/raw/sas/`, cleaned in `data/history/season_a.csv` |
 | [Sector Boundary 2022](https://services5.arcgis.com/deNm5epdmeZgcm16/arcgis/rest/services/Sector_Boundary_2022/FeatureServer/1) | NISR | Official province, district, and sector codes (attributes only) | `data/reference/districts.csv`, `data/reference/sectors.csv` |
 
 Season A 2026 is the base file because it is the latest report that prints district maize yield and district irrigation by farm type together. It covers the main maize season. It is not the whole year.
@@ -185,9 +185,10 @@ The sheet is a Django site in `sheet/`. It reads the committed CSV files when it
 
 | Page | What it shows |
 | --- | --- |
-| `/` | the national yield against both PSTA 5 milestones, a map of the 30 districts coloured by action, and a table of every district's yield, action, and three gaps |
-| `/district/<name>/` | one district: the action and the reasons for it in sentences, yield against each milestone, the three levers with each gap's rank among the districts, the Season B check, the rainfall gate, and how many of its cells a second person has checked |
-| `/method/` | the rules and cutoffs, the districts within two points of a cutoff, the display rules, how Season B agrees with the actions, the Table 29 footer evidence, and what the sheet does not claim |
+| `/` | the national yield against both PSTA 5 milestones, a map of the 30 districts with four layers, and a table of every district's yield, action, and three gaps. Clicking a district opens its sheet in a side panel. |
+| `/district/<name>/` | one district: the action and the reasons for it in sentences, yield against each milestone, maize yield across the eight Season A surveys since 2019 with the national line and the PSTA 5 milestone, the three levers with each gap's rank among the districts and, folded, each lever by farm type year by year, the Season B check, the rainfall gate, and how many of its cells a second person has checked |
+| `/district/<name>/panel/` | the same sheet, shortened, as a fragment for the side panel |
+| `/method/` | the rules and cutoffs, the districts within two points of a cutoff, the display rules, how Season B agrees with the actions, the Table 29 footer evidence, the workbook table read for each year of the back-series, and what the sheet does not claim |
 
 ### How "every number names its source" is enforced
 
@@ -195,7 +196,7 @@ The rule is enforced in code, not only by review.
 
 1. `sheet/stats.py` defines `Source` (survey, table, year, link) and `Stat` (a value with its unit and source). A `Source` with any empty field raises an error. A `Stat` without a `Source` raises an error.
 2. Templates print a number only through the `{% stat %}` tag. It refuses anything that is not a `Stat` and renders the value with a citation link. Hovering the citation shows the survey, table, and year. Clicking it opens the document.
-3. A test parses every page and fails on any digit outside a cited statistic or a marked reference such as "Table 31". A second test checks that every citation has an `https` link and a three-part title.
+3. A test parses every page and panel and fails on any digit outside a cited statistic or a marked reference such as "Table 31". It reads inside the SVG map and charts too: a chart's only text is its year labels and its milestone label, both marked as references. A second test checks that every citation has an `https` link and a three-part title.
 
 Blank cells render as text that gives the reason, for example "blank (dash printed)". A gap with a blank side reads "no gap (a cell is blank)". Cells not yet signed by a second person carry a dotted underline.
 
@@ -203,7 +204,22 @@ Other figures follow the same rule. The cutoffs cite the evidence contract. Rain
 
 ### The map
 
-`tools/district_map.py` downloads the geoBoundaries file pinned to commit `9469f09` and checks the 30 names against the Season A districts. It then simplifies the outlines with the Douglas–Peucker method, at a tolerance of 0.002 degrees, and writes the 64 KB file `data/boundaries/rwa_districts.geojson`. The site draws the map as inline SVG on the server, so the page needs no map library and no JavaScript. The simplified outlines are for display only. Rainfall is still summed over the full-detail boundaries.
+`tools/district_map.py` downloads the geoBoundaries file pinned to commit `9469f09` and checks the 30 names against the Season A districts. It then simplifies the outlines with the Douglas–Peucker method, at a tolerance of 0.002 degrees, and writes the 64 KB file `data/boundaries/rwa_districts.geojson`. The site draws the map as inline SVG on the server, so the page needs no map library. The simplified outlines are for display only. Rainfall is still summed over the full-detail boundaries.
+
+Each district on the map carries four layers, switched by the buttons above it:
+
+| Layer | Colour means | Source |
+| --- | --- | --- |
+| Action | the action the rules name | rules on SAS Season A 2026 and CHIRPS |
+| Milestones | 2026 maize yield at or above the 2026/27 PSTA 5 milestone (2.26 t/ha), between 2.06 and 2.26, or below 2.06 | SAS A 2026 Table 13, PSTA 5 |
+| Trend | 2026 maize yield above every earlier Season A result of the same district since 2019, below every one, or in between | the back-series |
+| Rainfall | September to February rainfall below or above the median of the districts | CHIRPS |
+
+The trend layer compares a district only with itself. Survey estimates move between years by sampling alone, so a record is a reason to look, not a proven trend. With the committed files, Muhanga, Rulindo, Musanze, and Bugesera reach their highest Season A maize yield since 2019, and no district reaches its lowest.
+
+`sheet/static/sheet/map.js`, about a hundred lines with no library, switches layers and opens the side panel. Without it, the map shows the action layer and every district links to its full page. The layer and the open district are kept in the address (`?layer=trend&d=bugesera`), so a view can be shared. Escape closes the panel, and focus returns to the district.
+
+The trend charts are drawn on the server as SVG by `sheet/charts.py`. A blank year breaks the line; it is never drawn at zero. Under each chart, a table prints every plotted value with its citation, which names the workbook table and the year.
 
 ## What this project does not claim
 
@@ -267,7 +283,8 @@ To resolve the Table 29 footer, open page 57 and read the line under the table. 
 | `sheet/sheet.py` | builds each page's figures from the cells, rainfall, and rules |
 | `sheet/stats.py` | `Source` and `Stat`: a number cannot exist without its source |
 | `sheet/mapsvg.py` | projects the outlines into the SVG map |
-| `sheet/templates/`, `sheet/static/` | pages and style sheet |
+| `sheet/charts.py` | geometry of the trend charts; every plotted value stays a cited `Stat` |
+| `sheet/templates/`, `sheet/static/` | pages, shared page parts, style sheet, and `map.js` for layers and the side panel |
 | `sheet/tests.py` | page tests, including the audit for numbers without a source |
 | `tools/` | transcription, back-series, manifest, reference-code, rainfall, map, and sign-off scripts |
 | `tests/` | unit tests for the data and rules modules |
@@ -372,8 +389,9 @@ GitLab pipelines run on merge requests and on pushes to `dev` and `main`. There 
 | 3. Rules | on `dev` |
 | 4. Django application: map, district page, method page | on `dev` |
 | 5. Season B 2026 beside Season A | built; Table 29 footer confirmed; Season B sign-off waits for a person |
-| 6. Data pipeline: raw-file manifest, NISR codes, 2019–2026 back-series | built; not yet on any page |
-| 7. Public repository, deployed link, submission | due 23:59, 30 October 2026 |
+| 6. Data pipeline: raw-file manifest, NISR codes, 2019–2026 back-series | on `dev` |
+| 7. Map layers, side panel, and trend charts from the back-series | built |
+| 8. Public repository, deployed link, submission | due 23:59, 30 October 2026 |
 
 ## Sources
 
