@@ -15,12 +15,16 @@
     A gap is not a cause; read the <a href="{% url 'method' %}">method</a> before acting on a label.</p>
 </section>
 
-<section class="map-block">
+<section class="map-block" data-layer="action">
+  <div class="layers" role="group" aria-label="Map layer" hidden>
+    {% for layer in layers %}<button type="button" data-layer="{{ layer.key }}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}">{{ layer.name }}</button>{% endfor %}
+  </div>
   <figure class="map">
     <svg viewBox="0 0 {{ map.width }} {{ map.height }}" role="img" aria-labelledby="map-title">
-      <title id="map-title">Rwanda's districts coloured by the action the rules name</title>
+      <title id="map-title">Rwanda's districts. Each one links to its sheet.</title>
       {% for row, shape in regions %}
-      <a href="{% url 'district' row.slug %}" class="region action-{{ row.action|default:'none' }}{% if row.above %} above{% endif %}">
+      <a href="{% url 'district' row.slug %}" class="region action-{{ row.action|default:'none' }} milestone-{{ row.milestone_band }} trend-{{ row.trend_band }} rain-{{ row.rain_band }}{% if row.above %} above{% endif %}"
+         data-slug="{{ row.slug }}" data-panel="{% url 'district_panel' row.slug %}">
         <title>{{ row.name }}: {{ row.action_label }}{% if row.fertilizer_named %}, fertilizer also named{% endif %}</title>
         <path d="{{ shape.path }}"/>
       </a>
@@ -28,23 +32,38 @@
       {% for row, shape in regions %}{% if row.above %}
       <circle class="milestone-dot" cx="{{ shape.x }}" cy="{{ shape.y }}" r="6"><title>{{ row.name }} is at or above the later milestone</title></circle>
       {% endif %}{% endfor %}
+      {% for row, shape in regions %}
+      <text class="region-label" x="{{ shape.x }}" y="{{ shape.y }}" text-anchor="middle">{{ row.name }}</text>
+      {% endfor %}
     </svg>
-    <figcaption>District outlines: geoBoundaries (Open Data Rwanda), simplified for display.</figcaption>
+    <figcaption>District outlines: geoBoundaries (Open Data Rwanda), simplified for display. Click a district for its sheet.</figcaption>
   </figure>
   <div class="legend">
-    <h2>Action named by the rules</h2>
-    <ul>
-      {% for label, key, count in counts %}
-      <li><span class="swatch action-{{ key }}"></span>{{ label }}: {% stat count %}</li>
-      {% endfor %}
-      <li><span class="swatch dot"></span>At or above the <span class="ref">PSTA 5</span> milestone for <span class="ref">{{ milestone_columns.1 }}</span></li>
-    </ul>
-    <p>Inorganic fertilizer is named in {% stat fertilizer_count %}; in {% stat fertilizer_alone %} of them, no action is
-      named, so fertilizer appears there only as a note. Large farms report high input use
-      almost everywhere, so read seed and fertilizer labels as the common case, and compare the gap sizes and ranks
-      on each district page.</p>
+    {% for layer in layers %}
+    <div class="legend-layer" data-layer="{{ layer.key }}"{% if not forloop.first %} hidden{% endif %}>
+      <h2>{% parts layer.title %}</h2>
+      <ul>
+        {% for item in layer.items %}
+        <li><span class="swatch {{ layer.key }}-{{ item.key }}"></span><span>{% parts item.label %}: {% stat item.count %}</span></li>
+        {% endfor %}
+        {% if forloop.first %}<li><span class="swatch dot"></span><span>At or above the <span class="ref">PSTA 5</span> milestone for <span class="ref">{{ milestone_columns.1 }}</span></span></li>{% endif %}
+      </ul>
+      {% if forloop.first %}
+      <p>Inorganic fertilizer is named in {% stat fertilizer_count %}; in {% stat fertilizer_alone %} of them, no action is
+        named, so fertilizer appears there only as a note. Large farms report high input use
+        almost everywhere, so read seed and fertilizer labels as the common case, and compare the gap sizes and ranks
+        on each district page.</p>
+      {% endif %}
+      <p class="note">{% parts layer.note %}</p>
+    </div>
+    {% endfor %}
   </div>
 </section>
+
+<aside id="panel" class="panel" aria-label="District sheet" aria-hidden="true" inert>
+  <button type="button" class="panel-close" aria-label="Close the district sheet">&times;</button>
+  <div class="panel-body" tabindex="-1"></div>
+</aside>
 
 <section>
   <h2>All districts</h2>
