@@ -12,15 +12,14 @@ recorded from both files, because workbook Table 29 says "SAS 2025".
 from __future__ import annotations
 
 import csv
-import re
 import sys
-import zipfile
 from decimal import Decimal
 from pathlib import Path
-from xml.etree import ElementTree
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import transcribe_season_a as season_a  # noqa: E402
+from umusaruro import xlsx  # noqa: E402
 
 SOURCE = "https://statistics.gov.rw/sites/default/files/documents/2026-09/SAS%202026B_Main%20report.pdf"
 SURVEY = "SAS"
@@ -47,61 +46,10 @@ PRACTICE_GROUPS = [
     ("irrigation", ["all", "ssf", "lsf"]),
     ("agroforestry", ["all", "ssf", "lsf"]),
 ]
-NS = {"m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
-REL = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id"
-
-
 def cell(table, geography, farmer_type, crop, measure, raw, unit, printed):
     row = season_a.cell(table, geography, farmer_type, crop, measure, raw, unit, printed)
     row.update(survey=SURVEY, season=SEASON, year=YEAR, source_url=SOURCE)
     return row
-
-
-def column_index(ref: str) -> int:
-    letters = re.match(r"[A-Z]+", ref).group()
-    index = 0
-    for letter in letters:
-        index = index * 26 + ord(letter) - 64
-    return index - 1
-
-
-def excel_number(text: str) -> Decimal:
-    """Excel stores binary floats and shows 15 significant digits: 40.049999999999997 is 40.05."""
-    return Decimal(format(float(text), ".15g"))
-
-
-def workbook_sheets(path: Path) -> dict[str, list[list]]:
-    """Every sheet as rows of cell values. Standard library only."""
-    with zipfile.ZipFile(path) as book:
-        strings = []
-        if "xl/sharedStrings.xml" in book.namelist():
-            for item in ElementTree.fromstring(book.read("xl/sharedStrings.xml")).findall("m:si", NS):
-                strings.append("".join(t.text or "" for t in item.iter(f"{{{NS['m']}}}t")))
-        rels = ElementTree.fromstring(book.read("xl/_rels/workbook.xml.rels"))
-        targets = {rel.get("Id"): rel.get("Target") for rel in rels}
-        sheets = {}
-        for sheet in ElementTree.fromstring(book.read("xl/workbook.xml")).find("m:sheets", NS):
-            target = targets[sheet.get(REL)].lstrip("/")
-            target = target if target.startswith("xl/") else f"xl/{target}"
-            rows = []
-            for row in ElementTree.fromstring(book.read(target)).iter(f"{{{NS['m']}}}row"):
-                values = {}
-                for c in row.findall("m:c", NS):
-                    v = c.find("m:v", NS)
-                    inline = c.find("m:is", NS)
-                    if c.get("t") == "s" and v is not None:
-                        value = strings[int(v.text)]
-                    elif c.get("t") == "inlineStr" and inline is not None:
-                        value = "".join(t.text or "" for t in inline.iter(f"{{{NS['m']}}}t"))
-                    elif v is not None:
-                        value = v.text if c.get("t") == "str" else excel_number(v.text)
-                    else:
-                        continue
-                    values[column_index(c.get("r"))] = value
-                if values:
-                    rows.append([values.get(i) for i in range(max(values) + 1)])
-            sheets[sheet.get("name")] = rows
-        return sheets
 
 
 def workbook_table(rows: list[list], table: str, width: int):
@@ -208,7 +156,7 @@ def main():
     text_path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("/tmp/sas2026b.txt")
     book_path = Path(sys.argv[2]) if len(sys.argv) > 2 else Path("/tmp/Tables_2026 Season B.xlsx")
     lines = season_a.lines_of(text_path.read_text(encoding="utf-8", errors="replace"))
-    sheets = workbook_sheets(book_path)
+    sheets = xlsx.sheets(book_path)
 
     plan = [
         ("18", "Table 18:", FARMER_GROUPS, "all_crops"),
