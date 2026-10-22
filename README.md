@@ -102,9 +102,9 @@ The script refuses to write the file unless the national figures in the contract
 
 The NISR workbook is read only to check the report. Every one of the 930 transcribed cells must equal the workbook value rounded to the digits the report printed. A printed dash must be an empty or zero workbook cell. Where the workbook stores a zero and the report prints a dash, as for large-farm seed in Nyarugenge and Ngororero, the cell stays blank. The report's dash is what a reader sees, and the report uses it both for zero and for no data.
 
-**The Table 29 footer.** In the workbook, Table 29 is titled "2026 Season B", but its footer reads "Source: NISR, SAS 2025". Every other sheet says SAS 2026. The printed report, page 57, reads "Source: NISR, SAS 2026". The report's own text gives the same national rates as the table: 13.1% of farmers, 11.5% of smallholders, and 56.2% of large farms. Both footers are recorded in `data/season_b_2026/footer_check.csv`. The evidence contract requires a person to resolve this, so Season B irrigation stays off the pages until someone types the footer they read on the printed page, with their name and the date (see below).
+**The Table 29 footer.** In the workbook, Table 29 is titled "2026 Season B", but its footer reads "Source: NISR, SAS 2025". Every other sheet says SAS 2026. The printed report, page 57, reads "Source: NISR, SAS 2026". The report's own text gives the same national rates as the table: 13.1% of farmers, 11.5% of smallholders, and 56.2% of large farms. Both footers are recorded in `data/season_b_2026/footer_check.csv`. The evidence contract requires a person to resolve this, so the pages show Season B irrigation only after someone types the footer they read on the printed page, with their name and the date (see below). Mukunzi Jonathan read "Source: NISR, SAS 2026" on page 57 on 22 October 2026, so Season B irrigation is shown.
 
-On each district page, Season B gets the same cutoffs, without the rainfall gate, since the rainfall window is Season A's. The page says whether the named lever would also pass in Season B. It never changes the action. With the committed files, the seed gap also reaches its cutoff in 15 of the 19 seed districts. It does not in Rubavu (24.9 points), Gakenke, or Bugesera, and Ngororero has no Season B gap. The irrigation comparison appears once the footer is confirmed.
+On each district page, Season B gets the same cutoffs, without the rainfall gate, since the rainfall window is Season A's. The page says whether the named lever would also pass in Season B. It never changes the action. With the committed files, the seed gap also reaches its cutoff in 15 of the 19 seed districts. It does not in Rubavu (24.9 points), Gakenke, or Bugesera, and Ngororero has no Season B gap. The irrigation gap also reaches its cutoff in 6 of the 7 irrigation districts. Nyagatare is the exception, at 27.4 points against 30.
 
 ### Rainfall gate
 
@@ -324,7 +324,7 @@ GitLab pipelines run on merge requests and on pushes to `dev` and `main`. There 
 | 2b. Rainfall gate | computed; restored to `dev` by merge request !6 |
 | 3. Rules | on `dev` |
 | 4. Django application: map, district page, method page | on `dev` |
-| 5. Season B 2026 beside Season A | built; Table 29 footer and Season B sign-off wait for a person |
+| 5. Season B 2026 beside Season A | built; Table 29 footer confirmed; Season B sign-off waits for a person |
 | 6. Public repository, deployed link, submission | due 23:59, 30 October 2026 |
 
 ## Sources

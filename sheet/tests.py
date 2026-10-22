@@ -7,6 +7,7 @@ from django.test import Client, SimpleTestCase, override_settings
 from django.urls import reverse
 
 from umusaruro import cells as cell_file
+from umusaruro import footers
 from umusaruro import rainfall as rainfall_file
 from umusaruro import rules
 
@@ -173,10 +174,14 @@ class PageTests(SimpleTestCase):
         self.assertIn(CONTRACT.full, html)
 
 
-def footer_resolved():
-    """Pretend a second person has confirmed the Table 29 footer."""
+def footer_state(resolved: bool):
+    """Set whether a second person has confirmed the Table 29 footer, whatever the committed file says."""
     cells_b, _resolved = sheet.season_b()
-    return mock.patch.object(sheet, "season_b", return_value=(cells_b, True))
+    return mock.patch.object(sheet, "season_b", return_value=(cells_b, resolved))
+
+
+def footer_resolved():
+    return footer_state(True)
 
 
 class SeasonBTests(SimpleTestCase):
@@ -194,12 +199,18 @@ class SeasonBTests(SimpleTestCase):
                 self.assertEqual(sheet.district_sheet(name).decision, d)
 
     def test_irrigation_is_withheld_until_the_footer_is_confirmed(self):
-        self.assertFalse(sheet.season_b()[1])
-        kirehe = self.page("Kirehe")
-        self.assertIn("SAS B 2026 T18", kirehe)
-        self.assertNotIn("SAS B 2026 T29", kirehe)
-        self.assertIn("Not shown until a second person confirms", kirehe)
-        self.assertNotIn("SAS B 2026 T29", self.client.get(reverse("method")).content.decode())
+        with footer_state(False):
+            kirehe = self.page("Kirehe")
+            self.assertIn("SAS B 2026 T18", kirehe)
+            self.assertNotIn("SAS B 2026 T29", kirehe)
+            self.assertIn("Not shown until a second person confirms", kirehe)
+            self.assertNotIn("SAS B 2026 T29", self.client.get(reverse("method")).content.decode())
+            for url in pages():
+                with self.subTest(url=url):
+                    self.assertEqual(audit(self.client.get(url).content.decode()).loose, [])
+
+    def test_committed_footer_state_matches_the_file(self):
+        self.assertEqual(sheet.season_b()[1], footers.resolved("29"))
 
     def test_irrigation_shows_once_the_footer_is_confirmed(self):
         with footer_resolved():
@@ -229,8 +240,9 @@ class SeasonBTests(SimpleTestCase):
         self.assertEqual((seed.agree.value, seed.total.value), (Decimal(15), Decimal(19)))
         self.assertEqual([n for n, _s in seed.differ], ["Rubavu", "Gakenke", "Bugesera"])
         self.assertEqual([n for n, _s in seed.blank], ["Ngororero"])
-        irrigation = next(a for a in sheet.season_b_agreement() if a.action == "irrigation")
-        self.assertTrue(irrigation.withheld)
+        with footer_state(False):
+            irrigation = next(a for a in sheet.season_b_agreement() if a.action == "irrigation")
+            self.assertTrue(irrigation.withheld)
         with footer_resolved():
             irrigation = next(a for a in sheet.season_b_agreement() if a.action == "irrigation")
             self.assertEqual((irrigation.agree.value, irrigation.total.value), (Decimal(6), Decimal(7)))
