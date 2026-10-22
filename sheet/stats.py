@@ -15,6 +15,7 @@ SAS_A_2026_URL = (
     "https://statistics.gov.rw/sites/default/files/documents/2026-04/"
     "SAS%202026%20Season%20A%20_Final%20Report.pdf"
 )
+SAS_B_2026_URL = "https://statistics.gov.rw/sites/default/files/documents/2026-09/SAS%202026B_Main%20report.pdf"
 PSTA_5_URL = (
     "https://www.minagri.gov.rw/fileadmin/user_upload/Minagri/Publications/"
     "Policies_and_strategies/PSTA_5_Abridged_version_Final.pdf"
@@ -59,6 +60,20 @@ def sas_a(table: str) -> Source:
     )
 
 
+def sas_b(table: str) -> Source:
+    return Source(
+        survey="Seasonal Agricultural Survey, Season B",
+        table=f"Table {table}",
+        year="2026",
+        url=SAS_B_2026_URL,
+        short=f"SAS B 2026 T{table}",
+    )
+
+
+def sas(season: str, table: str) -> Source:
+    return {"A": sas_a, "B": sas_b}[season](table)
+
+
 def psta(column: str) -> Source:
     return Source(
         survey="PSTA 5 results framework, maize productivity",
@@ -93,12 +108,36 @@ RULES = Source(
     short="rules, SAS A 2026",
 )
 
+RULES_B = Source(
+    survey="Umusaruro rules applied to SAS Season B 2026",
+    table="Tables 18, 23, 29, same cutoffs, no rainfall gate",
+    year="2026",
+    url=RULES_URL,
+    short="rules, SAS B 2026",
+)
+
 SIGNOFF = Source(
     survey="Umusaruro second-person sign-off",
     table="data/season_a_2026/cells.csv, checked column",
     year="2026",
     url="https://gitlab.com/mukunzijonathan/umusaruro/-/blob/main/data/season_a_2026/signoff.csv",
     short="sign-off",
+)
+
+SIGNOFF_B = Source(
+    survey="Umusaruro second-person sign-off, Season B",
+    table="data/season_b_2026/cells.csv, checked column",
+    year="2026",
+    url="https://gitlab.com/mukunzijonathan/umusaruro/-/blob/main/data/season_b_2026/signoff.csv",
+    short="sign-off B",
+)
+
+FOOTER_CHECK = Source(
+    survey="Umusaruro Season B footer check",
+    table="data/season_b_2026/footer_check.csv",
+    year="2026",
+    url="https://gitlab.com/mukunzijonathan/umusaruro/-/blob/main/data/season_b_2026/footer_check.csv",
+    short="footer check",
 )
 
 

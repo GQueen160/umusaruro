@@ -1,9 +1,14 @@
 import re
 from decimal import Decimal
 from html.parser import HTMLParser
+from unittest import mock
 
 from django.test import Client, SimpleTestCase, override_settings
 from django.urls import reverse
+
+from umusaruro import cells as cell_file
+from umusaruro import rainfall as rainfall_file
+from umusaruro import rules
 
 from sheet import sheet
 from sheet.stats import CONTRACT, Source, Stat, sas_a, tonnes
@@ -166,3 +171,67 @@ class PageTests(SimpleTestCase):
     def test_constants_cite_the_contract(self):
         html = self.client.get(reverse("method")).content.decode()
         self.assertIn(CONTRACT.full, html)
+
+
+def footer_resolved():
+    """Pretend a second person has confirmed the Table 29 footer."""
+    cells_b, _resolved = sheet.season_b()
+    return mock.patch.object(sheet, "season_b", return_value=(cells_b, True))
+
+
+class SeasonBTests(SimpleTestCase):
+    def setUp(self):
+        self.client = Client(HTTP_X_FORWARDED_PROTO="https")
+
+    def page(self, name):
+        return self.client.get(f"/district/{sheet.slug(name)}/").content.decode()
+
+    def test_actions_come_from_season_a_only(self):
+        _cells, _rain, decisions = sheet.data()
+        self.assertEqual(decisions, rules.classify_all(cell_file.load(), rainfall_file.load()))
+        with footer_resolved():
+            for name, d in decisions.items():
+                self.assertEqual(sheet.district_sheet(name).decision, d)
+
+    def test_irrigation_is_withheld_until_the_footer_is_confirmed(self):
+        self.assertFalse(sheet.season_b()[1])
+        kirehe = self.page("Kirehe")
+        self.assertIn("SAS B 2026 T18", kirehe)
+        self.assertNotIn("SAS B 2026 T29", kirehe)
+        self.assertIn("Not shown until a second person confirms", kirehe)
+        self.assertNotIn("SAS B 2026 T29", self.client.get(reverse("method")).content.decode())
+
+    def test_irrigation_shows_once_the_footer_is_confirmed(self):
+        with footer_resolved():
+            kirehe = self.page("Kirehe")
+            self.assertIn("SAS B 2026 T29", kirehe)
+            self.assertIn("80.0%", kirehe)
+            self.assertIn("Season B agrees: the irrigation gap is", kirehe)
+            nyagatare = self.page("Nyagatare")
+            self.assertIn("Season B differs: the irrigation gap is", nyagatare)
+            for url in pages():
+                with self.subTest(url=url):
+                    self.assertEqual(audit(self.client.get(url).content.decode()).loose, [])
+
+    def test_season_b_notes(self):
+        self.assertIn("Season B agrees: the all-crop seed gap is", self.page("Gasabo"))
+        rubavu = self.page("Rubavu")
+        self.assertIn("Season B differs: the all-crop seed gap is", rubavu)
+        self.assertIn("24.9 points", rubavu)
+        ngororero = self.page("Ngororero")
+        self.assertIn("In Season B the all-crop seed gap cannot be computed", ngororero)
+        self.assertIn("blank (dash printed)", ngororero)
+        self.assertNotIn("Season B agrees", self.page("Nyarugenge"))
+        self.assertNotIn("Season B differs", self.page("Nyarugenge"))
+
+    def test_method_page_counts_agreement(self):
+        seed = next(a for a in sheet.season_b_agreement() if a.action == "seed")
+        self.assertEqual((seed.agree.value, seed.total.value), (Decimal(15), Decimal(19)))
+        self.assertEqual([n for n, _s in seed.differ], ["Rubavu", "Gakenke", "Bugesera"])
+        self.assertEqual([n for n, _s in seed.blank], ["Ngororero"])
+        irrigation = next(a for a in sheet.season_b_agreement() if a.action == "irrigation")
+        self.assertTrue(irrigation.withheld)
+        with footer_resolved():
+            irrigation = next(a for a in sheet.season_b_agreement() if a.action == "irrigation")
+            self.assertEqual((irrigation.agree.value, irrigation.total.value), (Decimal(6), Decimal(7)))
+            self.assertEqual([n for n, _s in irrigation.differ], ["Nyagatare"])
