@@ -1,0 +1,31 @@
+province_id,province,district_id,district,sectors
+1,City of Kigali,11,Nyarugenge,10
+1,City of Kigali,12,Gasabo,15
+1,City of Kigali,13,Kicukiro,10
+2,Southern Province,21,Nyanza,10
+2,Southern Province,22,Gisagara,13
+2,Southern Province,23,Nyaruguru,14
+2,Southern Province,24,Huye,14
+2,Southern Province,25,Nyamagabe,17
+2,Southern Province,26,Ruhango,9
+2,Southern Province,27,Muhanga,12
+2,Southern Province,28,Kamonyi,12
+3,Western Province,31,Karongi,13
+3,Western Province,32,Rutsiro,13
+3,Western Province,33,Rubavu,12
+3,Western Province,34,Nyabihu,12
+3,Western Province,35,Ngororero,13
+3,Western Province,36,Rusizi,18
+3,Western Province,37,Nyamasheke,15
+4,Northern Province,41,Rulindo,17
+4,Northern Province,42,Gakenke,19
+4,Northern Province,43,Musanze,15
+4,Northern Province,44,Burera,17
+4,Northern Province,45,Gicumbi,21
+5,Eastern Province,51,Rwamagana,14
+5,Eastern Province,52,Nyagatare,14
+5,Eastern Province,53,Gatsibo,14
+5,Eastern Province,54,Kayonza,12
+5,Eastern Province,55,Kirehe,12
+5,Eastern Province,56,Ngoma,14
+5,Eastern Province,57,Bugesera,15
