@@ -1,0 +1,107 @@
+{% extends "sheet/base.html" %}
+{% load stats %}
+{% block title %}Method: Umusaruro{% endblock %}
+{% block content %}
+<h1>Method</h1>
+
+<section>
+  <h2>What the sheet is</h2>
+  <p>For each district, the sheet shows <span class="ref">Season A 2026</span> maize yield against the <span class="ref">PSTA 5</span>
+    milestones, then names one lever, irrigation or all-crop improved seed, from fixed rules. Inorganic fertilizer is
+    named beside the action when it also lags. The readers are a district agronomist and a planner at the Ministry of
+    Agriculture and Animal Resources. They read the sheet; they do not type figures into it.</p>
+  <p>Season A is the main maize season, and its report is the latest that prints district maize yield and district
+    input use split by farm type, smallholders against large farms. It is not the whole year.</p>
+</section>
+
+<section>
+  <h2>The rules</h2>
+  <p>The cutoffs are the team's, written into the evidence contract before the rainfall file was computed. They are
+    not NISR thresholds.</p>
+  <table class="constants">
+    <tbody>
+      {% for label, value in constants %}<tr><th scope="row">{{ label }}</th><td class="num">{% stat value %}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  <ol>
+    <li>A district is an <strong>irrigation candidate</strong> when both irrigation cells (Table <span class="ref">31</span>) are printed,
+      the large-farm minus smallholder gap reaches the irrigation cutoff, and smallholder irrigation is under the line.</li>
+    <li>A candidate gets irrigation as its action only when its September to February rainfall is below the median of the districts.</li>
+    <li><strong>Seed</strong> passes when the all-crop improved-seed gap (Table <span class="ref">20</span>) reaches its cutoff.</li>
+    <li>If both pass, the wider gap wins, unless seed leads irrigation by less than the lead cutoff; then irrigation stays.</li>
+    <li><strong>Fertilizer</strong> (Table <span class="ref">25</span>) is named beside the action when its gap reaches its cutoff. It never replaces the action.</li>
+    <li>A blank cell cannot open a gap. A district with neither lever passing gets no action.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>Districts close to a cutoff</h2>
+  <p>Within two points of a cutoff, one tenth of a point in a printed cell can change a label. These are listed so a
+    reader can see how firm each label is.</p>
+  <table class="near">
+    <thead><tr><th scope="col">District</th><th scope="col">Figure</th><th scope="col" class="num">Value</th><th scope="col" class="num">Cutoff</th></tr></thead>
+    <tbody>
+      {% for n in near %}<tr><th scope="row"><a href="{% url 'district' n.slug %}">{{ n.district }}</a></th><td>{{ n.what }}</td>
+        <td class="num">{% stat n.value %}</td><td class="num">{% stat n.cutoff %}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Display rules</h2>
+  <ul>
+    <li>Yields are stored in kg/ha as printed. Tonnes per hectare means dividing by one thousand and rounding half up to two decimals.
+      Above or below a milestone is decided on the kg/ha figure.</li>
+    <li>A dash, an empty column, or a district with no row is shown as blank, with the reason. It is never shown as zero.</li>
+    <li>Each statistic links to its source document. Hover the citation for the survey, table and year.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Why seed means all crops</h2>
+  <p>Table <span class="ref">20</span> counts farmers who used improved seed on any crop. The maize-only figure is Table <span class="ref">21</span>:
+    {% stat maize_improved %} of maize seed was improved. That table is national only, with no district column and no
+    farm-size column, so the sheet never shows it as a district figure and never calls Table <span class="ref">20</span> "maize seed".</p>
+  <p>Post-harvest loss is not a lever here: Table <span class="ref">16</span> puts maize post-harvest loss at {% stat maize_loss %} of use,
+    in one national row.</p>
+</section>
+
+<section>
+  <h2>Rainfall gate</h2>
+  <p>Monthly CHIRPS v<span class="ref">2.0</span> rainfall for <span class="ref">September 2025 to February 2026</span> is summed per grid cell. A district's total is the
+    mean of those sums at the grid cells whose centres fall inside the district boundary (geoBoundaries, Open Data Rwanda).
+    The median of the district totals is {% stat median %}.</p>
+  {% if thin %}<p>These totals rest on few grid cells and are thin:
+    {% for name, count in thin %}{{ name }} ({% stat count %}){% if not forloop.last %}, {% endif %}{% endfor %}.</p>{% endif %}
+  <p>Rainfall gates irrigation only. It is not the farmer's reason for irrigating or not.</p>
+</section>
+
+<section>
+  <h2>What the sheet does not claim</h2>
+  <ul>
+    <li>No maize variety: the survey records improved or traditional seed, not a variety name.</li>
+    <li>No yield gain from closing a gap. Each gap compares two kinds of farm.</li>
+    <li>No national rate copied onto a district.</li>
+    <li>No Season B or Season C figure in place of a <span class="ref">Season A</span> cell.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Second-person check</h2>
+  <p>{% stat screen_checked %} of {% stat screen_total %} that these pages can show have been checked by a second person, who types
+    each value blind from the printed table. Until a cell is checked, its number carries a dotted underline.</p>
+</section>
+
+<section>
+  <h2>Sources and disclosure</h2>
+  <ul>
+    <li><a href="https://statistics.gov.rw/sites/default/files/documents/2026-04/SAS%202026%20Season%20A%20_Final%20Report.pdf">NISR, Seasonal Agricultural Survey, <span class="ref">Season A 2026</span>, full report</a></li>
+    <li><a href="https://www.minagri.gov.rw/fileadmin/user_upload/Minagri/Publications/Policies_and_strategies/PSTA_5_Abridged_version_Final.pdf">MINAGRI, <span class="ref">PSTA 5</span>, abridged results framework</a></li>
+    <li><a href="https://data.chc.ucsb.edu/products/CHIRPS-2.0/africa_monthly/tifs/">CHIRPS v<span class="ref">2.0</span> Africa monthly</a>, Climate Hazards Center, UC Santa Barbara</li>
+    <li><a href="https://www.geoboundaries.org/api/current/gbOpen/RWA/ADM2/">geoBoundaries, Rwanda ADM<span class="ref">2</span></a>, from Open Data Rwanda, CC BY <span class="ref">4.0</span></li>
+    <li><a href="https://gitlab.com/mukunzijonathan/umusaruro">Source code, data files and evidence contract</a></li>
+  </ul>
+  <p>Drafting, transcription, the rainfall script, the rules module and this site used model assistance, as the
+    competition requires us to disclose. Every cell a page shows still has to be signed by a person against the printed table.</p>
+</section>
+{% endblock %}

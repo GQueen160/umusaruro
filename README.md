@@ -62,7 +62,7 @@ Each lever has a limit the sheet states plainly.
 | [Seasonal Agricultural Survey, Season A 2026](https://statistics.gov.rw/sites/default/files/documents/2026-04/SAS%202026%20Season%20A%20_Final%20Report.pdf) | NISR | Tables 13, 14, 16, 20, 21, 22, 25, and 31, transcribed cell by cell | `data/season_a_2026/cells.csv` |
 | [PSTA 5, abridged results framework](https://www.minagri.gov.rw/fileadmin/user_upload/Minagri/Publications/Policies_and_strategies/PSTA_5_Abridged_version_Final.pdf) | MINAGRI | Maize yield milestones: 1.70 (2023 baseline), 1.87, 2.06, 2.26, 2.49, 2.74 t/ha | the evidence contract |
 | [CHIRPS v2.0, Africa monthly](https://data.chc.ucsb.edu/products/CHIRPS-2.0/africa_monthly/tifs/) | Climate Hazards Center, UC Santa Barbara | Rainfall, September 2025 to February 2026, summed per district | `data/chirps/season_a_2026_rainfall.csv` |
-| [geoBoundaries, Rwanda ADM2](https://www.geoboundaries.org/api/current/gbOpen/RWA/ADM2/) | geoBoundaries, from Open Data Rwanda, CC BY 4.0 | The 30 district boundaries used to sum rainfall | not committed |
+| [geoBoundaries, Rwanda ADM2](https://www.geoboundaries.org/api/current/gbOpen/RWA/ADM2/) | geoBoundaries, from Open Data Rwanda, CC BY 4.0 | The 30 district boundaries: full detail to sum rainfall, simplified to draw the map | simplified copy in `data/boundaries/rwa_districts.geojson` |
 
 Season A 2026 is the base file because it is the latest report that prints district maize yield and district irrigation by farm type together. It covers the main maize season. It is not the whole year.
 
@@ -134,7 +134,33 @@ Some results sit one tenth of a point from a cutoff:
 - Gakenke's irrigation gap is 28.7 points, against 30.
 - Rwamagana's seed gap is 24.5 points, against 25.
 
-Seed fires in 19 districts and fertilizer is named in 25, because large farms report high input use almost everywhere. Read those labels as the common case, not as a finding specific to one district. The cutoffs were written into the evidence contract before this rainfall file was computed, and they have not been tuned to its results.
+Seed fires in 19 districts and fertilizer is named in 26, because large farms report high input use almost everywhere. Of those 26, 24 sit beside an action; in Nyanza and Karongi, fertilizer is named although no action is. Read those labels as the common case, not as a finding specific to one district. The cutoffs were written into the evidence contract before this rainfall file was computed, and they have not been tuned to its results.
+
+## The application
+
+The sheet is a Django site in `sheet/`. It reads the committed CSV files when it starts. It has no database, no login, and no forms.
+
+| Page | What it shows |
+| --- | --- |
+| `/` | the national yield against both PSTA 5 milestones, a map of the 30 districts coloured by action, and a table of every district's yield, action, and three gaps |
+| `/district/<name>/` | one district: the action and the reasons for it in sentences, yield against each milestone, the three levers with each gap's rank among the districts, the rainfall gate, and how many of its cells a second person has checked |
+| `/method/` | the rules and cutoffs, the districts within two points of a cutoff, the display rules, and what the sheet does not claim |
+
+### How "every number names its source" is enforced
+
+The rule is enforced in code, not only by review.
+
+1. `sheet/stats.py` defines `Source` (survey, table, year, link) and `Stat` (a value with its unit and source). A `Source` with any empty field raises an error. A `Stat` without a `Source` raises an error.
+2. Templates print a number only through the `{% stat %}` tag. It refuses anything that is not a `Stat` and renders the value with a citation link. Hovering the citation shows the survey, table, and year. Clicking it opens the document.
+3. A test parses every page and fails on any digit outside a cited statistic or a marked reference such as "Table 31". A second test checks that every citation has an `https` link and a three-part title.
+
+Blank cells render as text that gives the reason, for example "blank (dash printed)". A gap with a blank side reads "no gap (a cell is blank)". Cells not yet signed by a second person carry a dotted underline.
+
+Other figures follow the same rule. The cutoffs cite the evidence contract. Rainfall cites CHIRPS. A rank, such as "5 of 23 districts", cites the rules and the survey table it ranks. Districts with the same gap share a rank, and districts with a blank gap are not ranked.
+
+### The map
+
+`tools/district_map.py` downloads the geoBoundaries file pinned to commit `9469f09` and checks the 30 names against the Season A districts. It then simplifies the outlines with the Douglas–Peucker method, at a tolerance of 0.002 degrees, and writes the 64 KB file `data/boundaries/rwa_districts.geojson`. The site draws the map as inline SVG on the server, so the page needs no map library and no JavaScript. The simplified outlines are for display only. Rainfall is still summed over the full-detail boundaries.
 
 ## What this project does not claim
 
@@ -172,19 +198,57 @@ Two people can split the work by table. The sheet can be filled over several sit
 | `data/season_a_2026/cells.csv` | transcribed Season A 2026 cells |
 | `data/season_a_2026/signoff.csv` | second-person sign-off sheet |
 | `data/chirps/season_a_2026_rainfall.csv` | district rainfall totals |
+| `data/boundaries/rwa_districts.geojson` | simplified district outlines for the map, CC BY 4.0 |
 | `umusaruro/cells.py` | cell loader; blanks raise `BlankCell` |
 | `umusaruro/rainfall.py` | rainfall loader |
 | `umusaruro/rules.py` | cutoffs and `classify` |
 | `umusaruro/signoff.py` | sign-off sheet and review |
-| `tools/` | transcription, rainfall, and sign-off scripts |
-| `tests/` | unit tests |
+| `config/` | Django settings, URLs, and WSGI entry point |
+| `sheet/sheet.py` | builds each page's figures from the cells, rainfall, and rules |
+| `sheet/stats.py` | `Source` and `Stat`: a number cannot exist without its source |
+| `sheet/mapsvg.py` | projects the outlines into the SVG map |
+| `sheet/templates/`, `sheet/static/` | pages and style sheet |
+| `sheet/tests.py` | page tests, including the audit for numbers without a source |
+| `tools/` | transcription, rainfall, map, and sign-off scripts |
+| `tests/` | unit tests for the data and rules modules |
 
 ## Running it
 
-The tests need only the Python standard library:
+To run the site locally:
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+DJANGO_DEBUG=1 .venv/bin/python manage.py runserver
+```
+
+Then open <http://127.0.0.1:8000/>. `DJANGO_DEBUG=1` is for local work only.
+
+In production, set `DJANGO_SECRET_KEY` and `DJANGO_ALLOWED_HOSTS` (comma-separated host names), then run:
+
+```bash
+python manage.py collectstatic --noinput
+gunicorn config.wsgi
+```
+
+WhiteNoise serves the static files. Plain HTTP is redirected to HTTPS. Set `DJANGO_SSL_REDIRECT=0` only if the host already does that redirect.
+
+The data and rules tests need only the Python standard library:
 
 ```bash
 python3 -m unittest discover -s tests -v
+```
+
+The site tests need Django:
+
+```bash
+DJANGO_DEBUG=1 .venv/bin/python manage.py test sheet
+```
+
+To rebuild the map outlines:
+
+```bash
+python3 tools/district_map.py
 ```
 
 To rebuild the cell file from the NISR PDF:
@@ -216,7 +280,10 @@ python3 -m venv .venv
 
 `main` is the line we submit. `dev` is where merge requests land. Each piece of work goes on its own branch and opens a merge request into `dev`. `dev` merges into `main` when a phase is accepted.
 
-GitLab pipelines run on merge requests and on pushes to `dev` and `main`. The job compiles the Python modules, runs the unit tests, and checks that both copies of the evidence contract are present.
+GitLab pipelines run on merge requests and on pushes to `dev` and `main`. There are two jobs:
+
+- `evidence` compiles the Python modules, runs the unit tests, and checks that both copies of the evidence contract are present.
+- `app` installs `requirements.txt` and runs the site the way it is deployed, with `DEBUG` off. It runs Django's system check, collects the static files, and runs the site tests.
 
 ## Where the work stands
 
@@ -226,7 +293,7 @@ GitLab pipelines run on merge requests and on pushes to `dev` and `main`. The jo
 | 2. Season A cell file | on `main`; second-person sign-off open |
 | 2b. Rainfall gate | computed; restored to `dev` by merge request !6 |
 | 3. Rules | on `dev` |
-| 4. Django application: map, district page, method page | not started |
+| 4. Django application: map, district page, method page | built; in review in a merge request into `dev` |
 | 5. Season B 2026 beside Season A | not started |
 | 6. Public repository, deployed link, submission | due 23:59, 30 October 2026 |
 
@@ -254,6 +321,6 @@ Secondary. News reports of public sessions. They are not survey cells.
 
 ## Model assistance and ownership
 
-Drafting, transcription, the rainfall script, and the rules module used model assistance. The competition requires that disclosure. Every cell a screen shows still has to be signed by a person against the printed table.
+Drafting, transcription, the rainfall script, the rules module, and the Django site used model assistance. The competition requires that disclosure. Every cell a screen shows still has to be signed by a person against the printed table.
 
 Under the hackathon rules, intellectual property in the submission transfers to NISR.
