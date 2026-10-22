@@ -108,6 +108,30 @@
   <p>A dash in the printed report stays blank here, even where the workbook stores a zero.</p>
 </section>
 
+<section id="back-series">
+  <h2>The Season A back-series</h2>
+  <p>The trend charts and the trend layer read NISR's published tables workbook for each Season A survey. Table numbers
+    change every year, so the table read for each year and measure is listed here, linked to the workbook. A value is
+    rounded to the digits the reports print. A blank, a dash, or a zero in the workbook stays blank. The
+    <span class="ref">2026</span> values equal the printed Season A report, cell by cell. Earlier years have not yet been
+    checked against the printed reports, and table wording can change between years, so a change between two years
+    can be a change of definition.</p>
+  <div class="table-wrap">
+  <table class="series">
+    <thead><tr><th scope="col">Year</th>{% for label in history_levers %}<th scope="col">{{ label }}</th>{% endfor %}</tr></thead>
+    <tbody>
+      {% for year, url, tables in history_tables %}
+      <tr><th scope="row"><a class="ref" href="{{ url }}">{{ year }}</a></th>
+        {% for table in tables %}<td><span class="ref">Table {{ table }}</span></td>{% endfor %}</tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p>The trend layer compares each district's <span class="ref">Season A 2026</span> maize yield with that district's own
+    results from <span class="ref">2019</span> to <span class="ref">2025</span>: higher than all of them, lower than all of
+    them, or in between. It does not compare districts with each other.</p>
+</section>
+
 <section>
   <h2>What the sheet does not claim</h2>
   <ul>
@@ -134,6 +158,8 @@
     <li><a href="https://www.minagri.gov.rw/fileadmin/user_upload/Minagri/Publications/Policies_and_strategies/PSTA_5_Abridged_version_Final.pdf">MINAGRI, <span class="ref">PSTA 5</span>, abridged results framework</a></li>
     <li><a href="https://data.chc.ucsb.edu/products/CHIRPS-2.0/africa_monthly/tifs/">CHIRPS v<span class="ref">2.0</span> Africa monthly</a>, Climate Hazards Center, UC Santa Barbara</li>
     <li><a href="https://www.geoboundaries.org/api/current/gbOpen/RWA/ADM2/">geoBoundaries, Rwanda ADM<span class="ref">2</span></a>, from Open Data Rwanda, CC BY <span class="ref">4.0</span></li>
+    <li>NISR, Seasonal Agricultural Survey tables workbooks, <span class="ref">2019</span> to <span class="ref">2026</span>, linked by year in the back-series table above, each recorded with its checksum in the repository</li>
+    <li>NISR, Sector Boundary <span class="ref">2022</span>, for the official district codes</li>
     <li><a href="https://gitlab.com/mukunzijonathan/umusaruro">Source code, data files and evidence contract</a></li>
   </ul>
   <p>Drafting, transcription, the rainfall script, the rules module and this site used model assistance, as the

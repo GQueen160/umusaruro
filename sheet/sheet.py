@@ -14,14 +14,16 @@ from functools import lru_cache
 
 from umusaruro import cells as cell_file
 from umusaruro import footers
+from umusaruro import history as history_file
 from umusaruro import rainfall as rainfall_file
 from umusaruro import rules
 from umusaruro.cells import Cell, Cells
 from umusaruro.rules import Decision
 from umusaruro.signoff import screen_cells, season_b_screen_cells
 
-from sheet.stats import (CHIRPS, CONTRACT, FOOTER_CHECK, RULES, RULES_B, SIGNOFF, SIGNOFF_B, Stat, in_tonnes, psta,
-                         sas)
+from sheet import charts
+from sheet.stats import (CHIRPS, CONTRACT, FOOTER_CHECK, HISTORY, RULES, RULES_B, SIGNOFF, SIGNOFF_B, Ref, Stat,
+                         in_tonnes, psta, sas, sas_workbook)
 
 NATIONAL = "National"
 MILESTONES = [("2025/26", Decimal("2.06")), ("2026/27", Decimal("2.26"))]
@@ -101,6 +103,7 @@ class DistrictSheet:
     fertilizer: list
     season_b: list[SeasonBRow]
     season_b_note: list | None
+    trend: "Trend"
     shown: Stat
     checked: Stat
 
@@ -262,6 +265,100 @@ def _season_b_note(d: Decision, rows: list[SeasonBRow]) -> list | None:
     return [f"Season B differs: the {noun} gap is ", row.gap, ", under ", row.cutoff, "."]
 
 
+HISTORY_UNITS = {"kg_per_ha": "kg/ha", "t_per_ha": "t/ha", "percent": "%"}
+LATEST = 2026
+
+
+@lru_cache(maxsize=1)
+def history() -> history_file.History:
+    return history_file.load()
+
+
+def point_stat(point: history_file.Point) -> Stat:
+    return Stat(point.value, HISTORY_UNITS[point.unit], sas_workbook(point.year, point.table, point.source_url),
+                "number" if point.value is not None else point.printed)
+
+
+def by_year(lever: str, geography: str, farmer_type: str) -> dict[int, Stat]:
+    return {p.year: point_stat(p) for p in history().series(lever, geography, farmer_type)}
+
+
+def trend_band(name: str) -> str | None:
+    """Season A 2026 maize yield against the district's own 2019 to 2025 results: high, low, within, or None."""
+    series = by_year("maize_yield", name, "all")
+    latest = series[LATEST].value
+    earlier = [s.value for year, s in series.items() if year < LATEST and s.value is not None]
+    if latest is None or not earlier:
+        return None
+    if latest > max(earlier):
+        return "high"
+    if latest < min(earlier):
+        return "low"
+    return "within"
+
+
+@dataclass(frozen=True)
+class LeverTrend:
+    key: str
+    label: str
+    chart: charts.Chart
+    rows: list[tuple[str, list[Stat]]]
+
+
+@dataclass(frozen=True)
+class Trend:
+    years: list[int]
+    band: str | None
+    sentence: list
+    maize: charts.Chart
+    maize_rows: list[tuple[str, list[Stat]]]
+    levers: list[LeverTrend]
+
+
+def _trend_sentence(name: str, band: str | None, series: dict[int, Stat]) -> list:
+    latest = series[LATEST]
+    first = Ref(str(min(series)))
+    season = Ref(f"Season A {LATEST}")
+    if band is None:
+        return ["Maize yield in ", season, " is ", latest, ", so it cannot be set against earlier seasons."]
+    if band == "high":
+        return [latest, " in ", season, " is the highest maize yield in ", name, " since the series starts in ", first, "."]
+    if band == "low":
+        return [latest, " in ", season, " is the lowest maize yield in ", name, " since the series starts in ", first, "."]
+    earlier = {y: s for y, s in series.items() if y < LATEST and s.value is not None}
+    low = min(earlier.values(), key=lambda s: s.value)
+    high = max(earlier.values(), key=lambda s: s.value)
+    return [latest, " in ", season, " sits inside ", name, "'s earlier range, from ", low, " to ", high, "."]
+
+
+def district_trend(name: str) -> Trend:
+    years = history().years
+    maize = by_year("maize_yield", name, "all")
+    national = by_year("maize_yield", NATIONAL, "all")
+    milestone_column, milestone_t = MILESTONES[-1]
+    guide = Stat((milestone_t * 1000).quantize(Decimal(1)), "kg/ha", psta(milestone_column), checked=True)
+    band = trend_band(name)
+    levers = []
+    for key in ("seed", "fertilizer", "irrigation"):
+        small, large = by_year(key, name, "ssf"), by_year(key, name, "lsf")
+        series = [("ssf", "Smallholders", small), ("lsf", "Large farms", large)]
+        levers.append(LeverTrend(
+            key=key,
+            label=LEVER_LABELS[key][0],
+            chart=charts.chart(years, series, top=Decimal(100)),
+            rows=[(label, [values[y] for y in years]) for _k, label, values in series],
+        ))
+    return Trend(
+        years=years,
+        band=band,
+        sentence=_trend_sentence(name, band, maize),
+        maize=charts.chart(years, [("district", name, maize), ("national", "Rwanda", national)],
+                           guides=[(f"PSTA 5 milestone {milestone_column}", guide)]),
+        maize_rows=[(name, [maize[y] for y in years]), ("Rwanda", [national[y] for y in years])],
+        levers=levers,
+    )
+
+
 def district_sheet(name: str) -> DistrictSheet:
     cells, rain, decisions = data()
     d = decisions[name]
@@ -316,6 +413,7 @@ def district_sheet(name: str) -> DistrictSheet:
         fertilizer=_fertilizer(d, levers["fertilizer"]),
         season_b=b_rows,
         season_b_note=_season_b_note(d, b_rows),
+        trend=district_trend(name),
         shown=Stat(Decimal(len(stats)), "survey cells", SIGNOFF, checked=True),
         checked=Stat(Decimal(sum(1 for s in stats if s.checked)), "", SIGNOFF, checked=True),
     )
@@ -337,6 +435,70 @@ class Row:
     irrigation_gap: Stat
     seed_gap: Stat
     fertilizer_gap: Stat
+    milestone_band: str
+    trend_band: str
+    rain_band: str
+
+
+@dataclass(frozen=True)
+class LayerItem:
+    key: str
+    label: list
+    count: Stat
+
+
+@dataclass(frozen=True)
+class Layer:
+    key: str
+    name: str
+    title: list
+    items: list[LayerItem]
+    note: list
+
+
+def milestone_band(maize_kg: Decimal | None) -> str:
+    if maize_kg is None:
+        return "unknown"
+    (_first, early), (_second, late) = MILESTONES
+    if maize_kg >= late * 1000:
+        return "late"
+    if maize_kg >= early * 1000:
+        return "early"
+    return "below"
+
+
+def _count(rows: list[Row], attr: str, key: str, source) -> Stat:
+    return Stat(Decimal(sum(1 for r in rows if getattr(r, attr) == key)), "districts", source, checked=True)
+
+
+def layers(rows: list[Row]) -> list[Layer]:
+    (early_col, _e), (late_col, _l) = MILESTONES
+    first = Ref(str(min(history().years)))
+    latest = Ref(f"Season A {LATEST}")
+    return [
+        Layer("action", "Action", ["Action named by the rules, ", latest], [
+            LayerItem("irrigation", [ACTION_LABELS["irrigation"]], _count(rows, "action", "irrigation", RULES)),
+            LayerItem("seed", [ACTION_LABELS["seed"]], _count(rows, "action", "seed", RULES)),
+            LayerItem("none", [ACTION_LABELS[None]], _count(rows, "action", None, RULES)),
+        ], ["Click a district for its sheet."]),
+        Layer("milestone", "Milestones", ["Maize yield, ", latest, ", against the ", Ref("PSTA 5"), " milestones"], [
+            LayerItem("late", ["At or above the ", Ref(late_col), " milestone"], _count(rows, "milestone_band", "late", RULES)),
+            LayerItem("early", ["At or above ", Ref(early_col), ", below ", Ref(late_col)],
+                      _count(rows, "milestone_band", "early", RULES)),
+            LayerItem("below", ["Below the ", Ref(early_col), " milestone"], _count(rows, "milestone_band", "below", RULES)),
+        ], ["Yield from ", Ref("SAS Season A 2026 Table 13"), "; milestones from the ", Ref("PSTA 5"),
+            " results framework."]),
+        Layer("trend", "Trend", [latest, " against each district's own record since ", first], [
+            LayerItem("high", ["Highest maize yield since ", first], _count(rows, "trend_band", "high", HISTORY)),
+            LayerItem("within", ["Inside the earlier range"], _count(rows, "trend_band", "within", HISTORY)),
+            LayerItem("low", ["Lowest since ", first], _count(rows, "trend_band", "low", HISTORY)),
+        ], ["Each district is compared only with itself, across the eight Season A surveys. Survey estimates move "
+            "from year to year by sampling alone, so a single record is a reason to look, not a proven trend."]),
+        Layer("rain", "Rainfall", ["September to February rainfall, ", latest], [
+            LayerItem("below", ["Below the median of the districts"], _count(rows, "rain_band", "below", CHIRPS)),
+            LayerItem("above", ["At or above the median"], _count(rows, "rain_band", "above", CHIRPS)),
+        ], ["Rainfall from ", Ref("CHIRPS v2.0"), ". It decides only whether irrigation can be named first."]),
+    ]
 
 
 def overview() -> dict:
@@ -344,17 +506,21 @@ def overview() -> dict:
     rows = []
     for name, d in decisions.items():
         levers = _lever_cells(cells, name)
+        maize_cell = cells.get("13", name, "all", "maize", "yield")
         rows.append(Row(
             name=name,
             slug=slug(name),
             action=d.action,
             action_label=ACTION_LABELS[d.action],
-            maize_t=in_tonnes(cell_stat(cells.get("13", name, "all", "maize", "yield"), "kg/ha")),
+            maize_t=in_tonnes(cell_stat(maize_cell, "kg/ha")),
             above=d.above_milestone,
             fertilizer_named=d.fertilizer_named,
             irrigation_gap=gap_stat(levers["irrigation"][1], levers["irrigation"][0]),
             seed_gap=gap_stat(levers["seed"][1], levers["seed"][0]),
             fertilizer_gap=gap_stat(levers["fertilizer"][1], levers["fertilizer"][0]),
+            milestone_band=milestone_band(maize_cell.value),
+            trend_band=trend_band(name) or "unknown",
+            rain_band="below" if rain[name].below_median else "above",
         ))
     counts = {}
     for key in ("irrigation", "seed", None):
@@ -365,6 +531,7 @@ def overview() -> dict:
     }
     return {
         "rows": rows,
+        "layers": layers(rows),
         "counts": [(ACTION_LABELS[k], k or "none", v) for k, v in counts.items()],
         "fertilizer_count": Stat(Decimal(sum(1 for d in decisions.values() if d.fertilizer_named)), "districts",
                                  RULES, checked=True),
@@ -477,4 +644,19 @@ def method() -> dict:
         "footer_source": FOOTER_CHECK,
         "screen_total_b": Stat(Decimal(len(keys_b)), "cells", SIGNOFF_B, checked=True),
         "screen_checked_b": Stat(Decimal(checked_b), "", SIGNOFF_B, checked=True),
+        "history_levers": [label for label, _key in HISTORY_COLUMNS],
+        "history_tables": history_tables(),
     }
+
+
+HISTORY_COLUMNS = [("Maize yield", "maize_yield"), ("Large-farm maize yield", "maize_yield_lsf"),
+                   ("Improved seed", "seed"), ("Inorganic fertilizer", "fertilizer"), ("Irrigation", "irrigation")]
+
+
+def history_tables() -> list[tuple[int, str, list[str]]]:
+    """For each year: the workbook URL and the table read for each measure."""
+    tables, urls = {}, {}
+    for p in history().points:
+        tables[(p.year, p.lever)] = p.table
+        urls[p.year] = p.source_url
+    return [(year, urls[year], [tables[(year, key)] for _label, key in HISTORY_COLUMNS]) for year in history().years]

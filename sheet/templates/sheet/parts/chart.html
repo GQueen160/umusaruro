@@ -1,0 +1,29 @@
+{% load stats %}<figure class="chart">
+  <svg viewBox="0 0 {{ c.width }} {{ c.height }}" role="img" aria-label="{{ label }}">
+    <line class="axis" x1="{{ c.left }}" x2="{{ c.right }}" y1="{{ c.baseline }}" y2="{{ c.baseline }}"/>
+    {% for g in c.guides %}
+    <line class="guide" x1="{{ c.left }}" x2="{{ c.right }}" y1="{{ g.y }}" y2="{{ g.y }}"/>
+    <text class="ref guide-label" x="{{ c.right }}" y="{{ g.label_y }}" text-anchor="end">{{ g.label }}</text>
+    {% endfor %}
+    {% for line in c.lines %}
+    {% for p in line.paths %}<path class="line s{{ forloop.parentloop.counter }}" d="{{ p }}"/>{% endfor %}
+    {% for m in line.marks %}{% if m.y is not None %}<circle class="dot s{{ forloop.parentloop.counter }}" cx="{{ m.x }}" cy="{{ m.y }}" r="3.5"/>{% endif %}{% endfor %}
+    {% endfor %}
+    {% for year, x in c.years %}<text class="ref year" x="{{ x }}" y="{{ c.year_y }}" text-anchor="middle">{{ year }}</text>{% endfor %}
+  </svg>
+  <div class="table-wrap">
+  <table class="series">
+    <thead><tr><th scope="col">{{ head }}</th>{% for year, x in c.years %}<th scope="col" class="num"><span class="ref">{{ year }}</span></th>{% endfor %}</tr></thead>
+    <tbody>
+      {% for row_label, stats in rows %}
+      <tr><th scope="row"><span class="key s{{ forloop.counter }}"></span>{{ row_label }}</th>
+        {% for s in stats %}<td class="num">{% stat s compact=True bare=True %}</td>{% endfor %}</tr>
+      {% endfor %}
+      {% for g in c.guides %}
+      <tr class="guide-row"><th scope="row"><span class="key guide"></span><span class="ref">{{ g.label }}</span></th>
+        <td class="num" colspan="{{ c.years|length }}">{% stat g.stat %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</figure>

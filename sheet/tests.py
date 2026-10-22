@@ -15,7 +15,7 @@ from sheet import sheet
 from sheet.stats import CONTRACT, Source, Stat, sas_a, tonnes
 
 ALLOWED = {"stat", "ref"}
-SKIPPED_TAGS = {"style", "script", "svg"}
+SKIPPED_TAGS = {"style", "script"}
 
 
 class DigitAudit(HTMLParser):
@@ -65,6 +65,7 @@ def pages():
     yield reverse("method")
     for name in sheet.districts():
         yield reverse("district", args=[sheet.slug(name)])
+        yield reverse("district_panel", args=[sheet.slug(name)])
 
 
 class StatTests(SimpleTestCase):
@@ -103,6 +104,10 @@ class AuditTests(SimpleTestCase):
     def test_audit_accepts_cited_numbers(self):
         html = '<p><span class="stat"><span class="v">1.99 t/ha</span><a class="cite" title="a, b, c">T13</a></span></p>'
         self.assertEqual(audit(html).loose, [])
+
+    def test_audit_reads_inside_svg(self):
+        self.assertEqual(audit('<svg><text x="1">2,260 kg/ha</text></svg>').loose, ["2,260 kg/ha"])
+        self.assertEqual(audit('<svg><text class="ref" x="1">2019</text></svg>').loose, [])
 
 
 class PageTests(SimpleTestCase):
@@ -172,6 +177,80 @@ class PageTests(SimpleTestCase):
     def test_constants_cite_the_contract(self):
         html = self.client.get(reverse("method")).content.decode()
         self.assertIn(CONTRACT.full, html)
+
+
+class MapAndTrendTests(SimpleTestCase):
+    def setUp(self):
+        self.client = Client(HTTP_X_FORWARDED_PROTO="https")
+        self.overview = self.client.get(reverse("overview")).content.decode()
+
+    def test_every_region_carries_all_four_layers_and_its_panel(self):
+        rows = {row.name: row for row in sheet.overview()["rows"]}
+        for name, row in rows.items():
+            slug = sheet.slug(name)
+            classes = (f'class="region action-{row.action or "none"} milestone-{row.milestone_band} '
+                       f'trend-{row.trend_band} rain-{row.rain_band}')
+            self.assertIn(classes, self.overview)
+            self.assertIn(f'data-panel="/district/{slug}/panel/"', self.overview)
+
+    def test_layer_counts_add_up_to_thirty(self):
+        for layer in sheet.overview()["layers"]:
+            with self.subTest(layer=layer.key):
+                self.assertEqual(sum(item.count.value for item in layer.items), 30)
+
+    def test_milestone_bands_follow_table_13(self):
+        cells, _rain, _d = sheet.data()
+        for name in sheet.districts():
+            kg = cells.get("13", name, "all", "maize", "yield").value
+            band = sheet.milestone_band(kg)
+            self.assertEqual(band == "late", kg >= Decimal("2260"), name)
+            self.assertEqual(band == "below", kg < Decimal("2060"), name)
+
+    def test_trend_band_compares_a_district_only_with_itself(self):
+        for name in sheet.districts():
+            series = sheet.by_year("maize_yield", name, "all")
+            earlier = [s.value for y, s in series.items() if y < sheet.LATEST]
+            band = sheet.trend_band(name)
+            self.assertEqual(band == "high", series[sheet.LATEST].value > max(earlier), name)
+            self.assertEqual(band == "low", series[sheet.LATEST].value < min(earlier), name)
+
+    def test_latest_history_point_is_the_printed_cell(self):
+        cells, _rain, _d = sheet.data()
+        for name in sheet.districts():
+            self.assertEqual(sheet.by_year("maize_yield", name, "all")[sheet.LATEST].value,
+                             cells.get("13", name, "all", "maize", "yield").value)
+
+    def test_panel_is_a_fragment_with_the_action_and_the_trend(self):
+        html = self.client.get(reverse("district_panel", args=["nyagatare"])).content.decode()
+        self.assertNotIn("<html", html)
+        self.assertIn("Irrigation", html)
+        self.assertIn("2,887 kg/ha", html)
+        self.assertIn('class="chart"', html)
+        self.assertIn('href="/district/nyagatare/"', html)
+        self.assertEqual(self.client.get("/district/atlantis/panel/").status_code, 404)
+
+    def test_chart_cites_every_year_and_never_plots_a_blank(self):
+        trend = sheet.district_trend("Nyarugenge")
+        irrigation = next(l for l in trend.levers if l.key == "irrigation")
+        large = irrigation.chart.lines[1]
+        for mark in large.marks:
+            self.assertEqual(mark.y is None, mark.stat.value is None)
+        self.assertTrue(any(m.y is None for m in large.marks))
+        html = self.client.get("/district/nyarugenge/").content.decode()
+        for year in trend.years:
+            self.assertRegex(html, rf'title="Seasonal Agricultural Survey, Season A, tables workbook, Table \d+, {year}"')
+
+    def test_method_page_lists_the_table_read_each_year(self):
+        rows = {year: tables for year, _url, tables in sheet.history_tables()}
+        self.assertEqual(rows[2026], ["13", "14", "20", "25", "31"])
+        self.assertEqual(rows[2019], ["13", "16", "28", "37", "48"])
+        self.assertIn('id="back-series"', self.client.get(reverse("method")).content.decode())
+
+    def test_record_districts_say_so(self):
+        for name in sheet.districts():
+            if sheet.trend_band(name) == "high":
+                html = self.client.get(f"/district/{sheet.slug(name)}/").content.decode()
+                self.assertIn("is the highest maize yield in", html)
 
 
 def footer_state(resolved: bool):

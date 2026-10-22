@@ -29,6 +29,7 @@ BLANK_TEXT = {
     "empty": "blank (column empty)",
     "absent": "blank (no row in the table)",
     "derived": "no gap (a cell is blank)",
+    "zero": "blank (zero in the workbook, printed as a dash)",
 }
 
 
@@ -72,6 +73,26 @@ def sas_b(table: str) -> Source:
 
 def sas(season: str, table: str) -> Source:
     return {"A": sas_a, "B": sas_b}[season](table)
+
+
+def sas_workbook(year: int, table: str, url: str) -> Source:
+    """A Season A table read from NISR's published tables workbook for that year."""
+    return Source(
+        survey="Seasonal Agricultural Survey, Season A, tables workbook",
+        table=f"Table {table}",
+        year=str(year),
+        url=url,
+        short=f"SAS A {year} T{table}",
+    )
+
+
+HISTORY = Source(
+    survey="Umusaruro Season A back-series from the SAS workbooks",
+    table="data/history/season_a.csv",
+    year="2019 to 2026",
+    url="https://gitlab.com/mukunzijonathan/umusaruro/-/blob/main/data/history/season_a.csv",
+    short="back-series",
+)
 
 
 def psta(column: str) -> Source:
@@ -141,6 +162,12 @@ FOOTER_CHECK = Source(
 )
 
 
+@dataclass(frozen=True)
+class Ref:
+    """A year, season, or table name inside a sentence. Printed as a marked reference, never as a statistic."""
+    text: str
+
+
 def tonnes(kg: Decimal) -> Decimal:
     """kg/ha to t/ha: divide by 1,000, round half up to two decimals."""
     return (kg / Decimal(1000)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
@@ -166,14 +193,19 @@ class Stat:
     def blank(self) -> bool:
         return self.value is None
 
-    def text(self) -> str:
+    def number(self) -> str:
+        """The value alone, formatted as text() formats it. Only for a cell whose header names the unit."""
         if self.value is None:
             return BLANK_TEXT[self.printed]
         value = self.value
         if self.unit == "kg/ha":
-            number = f"{int(value):,}" if value == value.to_integral_value() else f"{value:,}"
-        else:
-            number = f"{value}"
+            return f"{int(value):,}" if value == value.to_integral_value() else f"{value:,}"
+        return f"{value}"
+
+    def text(self) -> str:
+        if self.value is None:
+            return BLANK_TEXT[self.printed]
+        number = self.number()
         if self.unit == "%":
             return f"{number}%"
         return f"{number} {self.unit}" if self.unit else number

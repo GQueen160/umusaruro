@@ -5,30 +5,9 @@
 <nav class="crumbs"><a href="{% url 'overview' %}">All districts</a> / {{ s.name }}</nav>
 <h1>{{ s.name }}</h1>
 
-<section class="action-card action-{{ s.decision.action|default:'none' }}">
-  <p class="eyebrow">Action named by the rules</p>
-  <p class="action-name">{{ s.action_label }}</p>
-  {% for sentence in s.reason %}<p>{% parts sentence %}</p>{% endfor %}
-  <p class="fert-line">{% parts s.fertilizer %}</p>
-  <p class="caveat">A gap compares two kinds of farm in the same district. It is not a forecast of how much yield
-    would rise if the gap closed.</p>
-</section>
-
-<section>
-  <h2>Maize yield, <span class="ref">Season A 2026</span></h2>
-  <dl class="facts">
-    <div><dt>All farms in {{ s.name }}</dt><dd>{% stat s.maize_kg %} = {% stat s.maize_t %}</dd></div>
-    <div><dt>Large farms in {{ s.name }}</dt><dd>{% stat s.large_maize_kg %}{% if not s.large_maize_kg.blank %} = {% stat s.large_maize_t %}{% endif %}</dd></div>
-  </dl>
-  <ul class="milestones">
-    {% for m in s.milestones %}
-    <li class="{% if m.above %}above{% elif m.above is None %}unknown{% else %}below{% endif %}">
-      <span class="ref">PSTA 5</span> milestone for <span class="ref">{{ m.column }}</span>: {% stat m.target %} —
-      {% if m.above %}at or above{% elif m.above is None %}cannot be compared (blank cell){% else %}below{% endif %}
-    </li>
-    {% endfor %}
-  </ul>
-</section>
+{% include "sheet/parts/action.html" %}
+{% include "sheet/parts/maize.html" %}
+{% include "sheet/parts/trend.html" with levers=True %}
 
 <section>
   <h2>Smallholders against large farms in {{ s.name }}</h2>
