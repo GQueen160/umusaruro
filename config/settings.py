@@ -1,11 +1,13 @@
 """Django settings for Umusaruro.
 
-The site reads the committed CSV files. It has no database, no login, and
-no forms. Configuration comes from the environment:
+The engine keeps datasets, their tables, and every observation read from
+them in a database (SQLite by default). Uploaded files are kept under
+var/, which git ignores. Configuration comes from the environment:
 
     DJANGO_SECRET_KEY     required unless DJANGO_DEBUG=1
     DJANGO_DEBUG          "1" for local development
     DJANGO_ALLOWED_HOSTS  comma-separated host names
+    UMUSARURO_VAR         where the database and uploads live (default var/)
 """
 
 import os
@@ -24,14 +26,24 @@ ALLOWED_HOSTS = [h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "loca
 CSRF_TRUSTED_ORIGINS = [f"https://{h}" for h in ALLOWED_HOSTS if h not in ("localhost", "127.0.0.1")]
 
 INSTALLED_APPS = [
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
     "django.contrib.staticfiles",
+    "engine",
     "sheet",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
@@ -43,11 +55,25 @@ TEMPLATES = [
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [],
         "APP_DIRS": True,
-        "OPTIONS": {"context_processors": ["django.template.context_processors.request"]},
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ]
+        },
     }
 ]
 
-DATABASES = {}
+VAR_DIR = Path(os.environ.get("UMUSARURO_VAR", BASE_DIR / "var"))
+UPLOAD_DIR = VAR_DIR / "uploads"
+VAR_DIR.mkdir(parents=True, exist_ok=True)
+DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": VAR_DIR / "umusaruro.sqlite3"}}
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+UPLOAD_MAX_BYTES = 25 * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = 2_621_440
+FILE_UPLOAD_MAX_MEMORY_SIZE = 2_621_440
+LOGIN_URL = "admin:login"
 
 LANGUAGE_CODE = "en"
 TIME_ZONE = "Africa/Kigali"
