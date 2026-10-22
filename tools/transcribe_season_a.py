@@ -197,8 +197,9 @@ def assign_columns(line, edges):
     return columns
 
 
-def grid(lines, title, reference_name, groups, crop=""):
+def grid(lines, title, reference_name, groups, crop="", make=None):
     """groups is a list of (measure, [farmer_type, ...]) matching header order."""
+    make = make or cell
     start = table_start(lines, title)
     block = []
     for line in lines[start + 1 :]:
@@ -226,7 +227,7 @@ def grid(lines, title, reference_name, groups, crop=""):
                 cursor += 1
                 raw, printed = printed_of(token)
                 rows.append(
-                    cell(title_table(title), name if name != "National" else "National", farmer, crop, measure, raw, "percent", printed)
+                    make(title_table(title), name if name != "National" else "National", farmer, crop, measure, raw, "percent", printed)
                 )
     if seen != DISTRICTS + ["National"]:
         raise SystemExit(f"{title} row order {seen}")

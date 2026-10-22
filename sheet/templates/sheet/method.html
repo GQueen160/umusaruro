@@ -76,6 +76,38 @@
   <p>Rainfall gates irrigation only. It is not the farmer's reason for irrigating or not.</p>
 </section>
 
+<section id="season-b">
+  <h2><span class="ref">Season B 2026</span> beside <span class="ref">Season A</span></h2>
+  <p>NISR's Season B report covers the year's second season. Its seed, fertilizer and irrigation tables are
+    Tables <span class="ref">18</span>, <span class="ref">23</span> and <span class="ref">29</span>, not the Season A numbers.
+    The cells live in their own file. Season B never replaces a Season A cell and never changes an action. Each
+    district page applies the same cutoffs to Season B, without the rainfall gate, and says whether the named lever
+    would also pass.</p>
+  {% if season_b_national %}<ul>
+    {% for label, small, large in season_b_national %}<li>{{ label }}, national: {% stat small %} of smallholders, {% stat large %} of large farms.</li>{% endfor %}
+  </ul>{% endif %}
+  <ul>
+    {% for a in season_b %}
+    <li><strong>{{ a.label }}</strong>:
+      {% if a.withheld %}not compared until the irrigation table's footer is confirmed.
+      {% else %}the lever also passes in Season B in {% stat a.agree %} of {% stat a.total %}.
+        {% if a.differ %}It does not pass in {% for name, slug in a.differ %}<a href="{% url 'district' slug %}">{{ name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}.{% endif %}
+        {% if a.blank %}No Season B gap can be computed in {% for name, slug in a.blank %}<a href="{% url 'district' slug %}">{{ name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}.{% endif %}
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  <h3>The Table <span class="ref">29</span> footer</h3>
+  <p>In the NISR workbook, Table <span class="ref">29</span> is titled for Season B <span class="ref">2026</span>, but its footer reads
+    "<span class="ref">{{ footer.workbook_footer }}</span>". The printed report, page <span class="ref">{{ footer.pdf_page }}</span>, reads
+    "<span class="ref">{{ footer.pdf_footer }}</span>". Its text gives the same national irrigation rates as the table, and every
+    transcribed cell of Tables <span class="ref">18</span>, <span class="ref">23</span> and <span class="ref">29</span> rounds to the workbook value.</p>
+  <p>{% if footer_resolved %}{{ footer.checker }} confirmed the printed footer on <span class="ref">{{ footer.checked_on }}</span>, so Season B
+    irrigation is shown.{% else %}Season B irrigation stays off these pages until a second person reads the printed footer and records it in
+    the <a href="{{ footer_source.url }}">footer check file</a>.{% endif %}</p>
+  <p>A dash in the printed report stays blank here, even where the workbook stores a zero.</p>
+</section>
+
 <section>
   <h2>What the sheet does not claim</h2>
   <ul>
@@ -90,12 +122,15 @@
   <h2>Second-person check</h2>
   <p>{% stat screen_checked %} of {% stat screen_total %} that these pages can show have been checked by a second person, who types
     each value blind from the printed table. Until a cell is checked, its number carries a dotted underline.</p>
+  <p>For Season B, {% stat screen_checked_b %} of {% stat screen_total_b %} have been checked.</p>
 </section>
 
 <section>
   <h2>Sources and disclosure</h2>
   <ul>
     <li><a href="https://statistics.gov.rw/sites/default/files/documents/2026-04/SAS%202026%20Season%20A%20_Final%20Report.pdf">NISR, Seasonal Agricultural Survey, <span class="ref">Season A 2026</span>, full report</a></li>
+    <li><a href="https://statistics.gov.rw/sites/default/files/documents/2026-09/SAS%202026B_Main%20report.pdf">NISR, Seasonal Agricultural Survey, <span class="ref">Season B 2026</span>, main report</a>,
+      checked against the <a href="https://statistics.gov.rw/sites/default/files/documents/2026-09/Tables_2026%20Season%20B.xlsx">tables workbook</a></li>
     <li><a href="https://www.minagri.gov.rw/fileadmin/user_upload/Minagri/Publications/Policies_and_strategies/PSTA_5_Abridged_version_Final.pdf">MINAGRI, <span class="ref">PSTA 5</span>, abridged results framework</a></li>
     <li><a href="https://data.chc.ucsb.edu/products/CHIRPS-2.0/africa_monthly/tifs/">CHIRPS v<span class="ref">2.0</span> Africa monthly</a>, Climate Hazards Center, UC Santa Barbara</li>
     <li><a href="https://www.geoboundaries.org/api/current/gbOpen/RWA/ADM2/">geoBoundaries, Rwanda ADM<span class="ref">2</span></a>, from Open Data Rwanda, CC BY <span class="ref">4.0</span></li>

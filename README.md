@@ -60,6 +60,7 @@ Each lever has a limit the sheet states plainly.
 | Dataset | Publisher | What this project takes | In the repository |
 | --- | --- | --- | --- |
 | [Seasonal Agricultural Survey, Season A 2026](https://statistics.gov.rw/sites/default/files/documents/2026-04/SAS%202026%20Season%20A%20_Final%20Report.pdf) | NISR | Tables 13, 14, 16, 20, 21, 22, 25, and 31, transcribed cell by cell | `data/season_a_2026/cells.csv` |
+| [Seasonal Agricultural Survey, Season B 2026](https://statistics.gov.rw/sites/default/files/documents/2026-09/SAS%202026B_Main%20report.pdf) | NISR | Tables 18, 23, and 29, transcribed from the report and checked against the [tables workbook](https://statistics.gov.rw/sites/default/files/documents/2026-09/Tables_2026%20Season%20B.xlsx). Shown beside Season A as a check. | `data/season_b_2026/cells.csv` |
 | [PSTA 5, abridged results framework](https://www.minagri.gov.rw/fileadmin/user_upload/Minagri/Publications/Policies_and_strategies/PSTA_5_Abridged_version_Final.pdf) | MINAGRI | Maize yield milestones: 1.70 (2023 baseline), 1.87, 2.06, 2.26, 2.49, 2.74 t/ha | the evidence contract |
 | [CHIRPS v2.0, Africa monthly](https://data.chc.ucsb.edu/products/CHIRPS-2.0/africa_monthly/tifs/) | Climate Hazards Center, UC Santa Barbara | Rainfall, September 2025 to February 2026, summed per district | `data/chirps/season_a_2026_rainfall.csv` |
 | [geoBoundaries, Rwanda ADM2](https://www.geoboundaries.org/api/current/gbOpen/RWA/ADM2/) | geoBoundaries, from Open Data Rwanda, CC BY 4.0 | The 30 district boundaries: full detail to sum rainfall, simplified to draw the map | simplified copy in `data/boundaries/rwa_districts.geojson` |
@@ -70,7 +71,7 @@ Season A 2026 is the base file because it is the latest report that prints distr
 
 | Dataset | Why it is not on the sheet |
 | --- | --- |
-| [SAS Season B 2026](https://statistics.gov.rw/statistical-publications/agriculture-environment/seasonal-agricultural-survey-season-b-2026) | Planned as a check file beside Season A. It must never replace a Season A cell. Its irrigation sheet, workbook Table 29, has a footer that still reads "SAS 2025", so no Season B irrigation cell is shown until that is resolved. |
+| [SAS Season B 2026, district maize yield](https://statistics.gov.rw/statistical-publications/agriculture-environment/seasonal-agricultural-survey-season-b-2026) | Tables 11 and 12 print Season B district yields, but the evidence contract does not name them, and Season B is the smaller maize season. Only the input tables are used. |
 | [SAS 2025 microdata, catalog study 124](https://microdata.statistics.gov.rw/index.php/catalog/124) | Not used until a weighted run reproduces a published national rate, such as 64.3% maize improved seed. It has no variety name and no satisfaction score. No 2026 microdata is on the catalog. |
 | [Agricultural Household Survey 2024](https://statistics.gov.rw/sites/default/files/documents/2025-10/AHS%202024_Main%20report.pdf) | Provincial, not district. Its farmer-reason questions on irrigation are not a district table. |
 | [RwaSIS](https://www.rab.gov.rw/1-1/news-details/rab-launches-rwanda-digital-soil-information-system-to-improve-agricultural-productivity) | RAB's soil and fertilizer recommendation system. Maize recommendations were still in testing at the November 2024 launch. This project does not replace it. |
@@ -94,6 +95,16 @@ A blank is an empty value. The `printed` column records why:
 `Cell.number()` in `umusaruro/cells.py` raises `BlankCell` for every case except `number`. A blank is never read as zero. A printed zero stays zero.
 
 The script refuses to write the file unless the national figures in the contract reproduce: maize 1,897, 1,994, and 4,337 kg/ha, and irrigation 12.6% of smallholders and 60.3% of large farms.
+
+### Season B, as a check
+
+`tools/transcribe_season_b.py` reads the Season B report the same way, with the same column parser and the same blank rules. It writes Tables 18 (seed), 23 (inorganic fertilizer), and 29 (irrigation) to their own file, `data/season_b_2026/cells.csv`. These table numbers are not the Season A numbers. Season B loads into its own object, so it cannot stand in for a Season A cell.
+
+The NISR workbook is read only to check the report. Every one of the 930 transcribed cells must equal the workbook value rounded to the digits the report printed. A printed dash must be an empty or zero workbook cell. Where the workbook stores a zero and the report prints a dash, as for large-farm seed in Nyarugenge and Ngororero, the cell stays blank. The report's dash is what a reader sees, and the report uses it both for zero and for no data.
+
+**The Table 29 footer.** In the workbook, Table 29 is titled "2026 Season B", but its footer reads "Source: NISR, SAS 2025". Every other sheet says SAS 2026. The printed report, page 57, reads "Source: NISR, SAS 2026". The report's own text gives the same national rates as the table: 13.1% of farmers, 11.5% of smallholders, and 56.2% of large farms. Both footers are recorded in `data/season_b_2026/footer_check.csv`. The evidence contract requires a person to resolve this, so the pages show Season B irrigation only after someone types the footer they read on the printed page, with their name and the date (see below). Mukunzi Jonathan read "Source: NISR, SAS 2026" on page 57 on 22 October 2026, so Season B irrigation is shown.
+
+On each district page, Season B gets the same cutoffs, without the rainfall gate, since the rainfall window is Season A's. The page says whether the named lever would also pass in Season B. It never changes the action. With the committed files, the seed gap also reaches its cutoff in 15 of the 19 seed districts. It does not in Rubavu (24.9 points), Gakenke, or Bugesera, and Ngororero has no Season B gap. The irrigation gap also reaches its cutoff in 6 of the 7 irrigation districts. Nyagatare is the exception, at 27.4 points against 30.
 
 ### Rainfall gate
 
@@ -143,8 +154,8 @@ The sheet is a Django site in `sheet/`. It reads the committed CSV files when it
 | Page | What it shows |
 | --- | --- |
 | `/` | the national yield against both PSTA 5 milestones, a map of the 30 districts coloured by action, and a table of every district's yield, action, and three gaps |
-| `/district/<name>/` | one district: the action and the reasons for it in sentences, yield against each milestone, the three levers with each gap's rank among the districts, the rainfall gate, and how many of its cells a second person has checked |
-| `/method/` | the rules and cutoffs, the districts within two points of a cutoff, the display rules, and what the sheet does not claim |
+| `/district/<name>/` | one district: the action and the reasons for it in sentences, yield against each milestone, the three levers with each gap's rank among the districts, the Season B check, the rainfall gate, and how many of its cells a second person has checked |
+| `/method/` | the rules and cutoffs, the districts within two points of a cutoff, the display rules, how Season B agrees with the actions, the Table 29 footer evidence, and what the sheet does not claim |
 
 ### How "every number names its source" is enforced
 
@@ -190,6 +201,12 @@ Each cell a screen can show must be signed by a person against the printed PDF. 
 
 Two people can split the work by table. The sheet can be filled over several sittings. Rows left blank stay unchecked.
 
+### Season B
+
+`data/season_b_2026/signoff.csv` lists the 189 Season B cells the pages can show: smallholders and large farms in every district, plus the national row, for Tables 18, 23, and 29. Use the [Season B report](https://statistics.gov.rw/sites/default/files/documents/2026-09/SAS%202026B_Main%20report.pdf), where Table 18 is on page 46, Table 23 on page 51, and Table 29 on page 57. The steps are the same, and `tools/apply_signoff.py` checks both seasons at once.
+
+To resolve the Table 29 footer, open page 57 and read the line under the table. In `data/season_b_2026/footer_check.csv`, on the row for table 29, type that line into `footer_on_page` exactly as printed, and fill `checker` and `checked_on`. Season B irrigation appears on the pages only when the typed line reads "Source: NISR, SAS 2026" and both other fields are filled.
+
 ## Repository layout
 
 | Path | Contents |
@@ -197,12 +214,16 @@ Two people can split the work by table. The sheet can be filled over several sit
 | `docs/` | evidence contract (PDF and DOCX) and its generator |
 | `data/season_a_2026/cells.csv` | transcribed Season A 2026 cells |
 | `data/season_a_2026/signoff.csv` | second-person sign-off sheet |
+| `data/season_b_2026/cells.csv` | transcribed Season B 2026 cells, Tables 18, 23, and 29 |
+| `data/season_b_2026/signoff.csv` | Season B sign-off sheet |
+| `data/season_b_2026/footer_check.csv` | report and workbook footers, and the person who resolved them |
 | `data/chirps/season_a_2026_rainfall.csv` | district rainfall totals |
 | `data/boundaries/rwa_districts.geojson` | simplified district outlines for the map, CC BY 4.0 |
 | `umusaruro/cells.py` | cell loader; blanks raise `BlankCell` |
 | `umusaruro/rainfall.py` | rainfall loader |
 | `umusaruro/rules.py` | cutoffs and `classify` |
-| `umusaruro/signoff.py` | sign-off sheet and review |
+| `umusaruro/signoff.py` | sign-off sheets and review, both seasons |
+| `umusaruro/footers.py` | whether the Table 29 footer has been resolved by a person |
 | `config/` | Django settings, URLs, and WSGI entry point |
 | `sheet/sheet.py` | builds each page's figures from the cells, rainfall, and rules |
 | `sheet/stats.py` | `Source` and `Stat`: a number cannot exist without its source |
@@ -258,6 +279,15 @@ pdftotext -layout "SAS 2026 Season A _Final Report.pdf" /tmp/sas2026a.txt
 python3 tools/transcribe_season_a.py /tmp/sas2026a.txt
 ```
 
+To rebuild the Season B cells, download the [report](https://statistics.gov.rw/sites/default/files/documents/2026-09/SAS%202026B_Main%20report.pdf) and the [workbook](https://statistics.gov.rw/sites/default/files/documents/2026-09/Tables_2026%20Season%20B.xlsx), then:
+
+```bash
+pdftotext -layout "SAS 2026B_Main report.pdf" /tmp/sas2026b.txt
+python3 tools/transcribe_season_b.py /tmp/sas2026b.txt "Tables_2026 Season B.xlsx"
+```
+
+The script stops if any cell disagrees with the workbook. It keeps any footer already typed in `footer_check.csv`.
+
 To rebuild the rainfall totals, download the six monthly files (`chirps-v2.0.2025.09.tif.gz` through `chirps-v2.0.2026.02.tif.gz`) and the geoBoundaries GeoJSON into `/tmp/chirps`, then:
 
 ```bash
@@ -293,8 +323,8 @@ GitLab pipelines run on merge requests and on pushes to `dev` and `main`. There 
 | 2. Season A cell file | on `main`; second-person sign-off open |
 | 2b. Rainfall gate | computed; restored to `dev` by merge request !6 |
 | 3. Rules | on `dev` |
-| 4. Django application: map, district page, method page | built; in review in a merge request into `dev` |
-| 5. Season B 2026 beside Season A | not started |
+| 4. Django application: map, district page, method page | on `dev` |
+| 5. Season B 2026 beside Season A | built; Table 29 footer confirmed; Season B sign-off waits for a person |
 | 6. Public repository, deployed link, submission | due 23:59, 30 October 2026 |
 
 ## Sources
