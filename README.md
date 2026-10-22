@@ -64,6 +64,8 @@ Each lever has a limit the sheet states plainly.
 | [PSTA 5, abridged results framework](https://www.minagri.gov.rw/fileadmin/user_upload/Minagri/Publications/Policies_and_strategies/PSTA_5_Abridged_version_Final.pdf) | MINAGRI | Maize yield milestones: 1.70 (2023 baseline), 1.87, 2.06, 2.26, 2.49, 2.74 t/ha | the evidence contract |
 | [CHIRPS v2.0, Africa monthly](https://data.chc.ucsb.edu/products/CHIRPS-2.0/africa_monthly/tifs/) | Climate Hazards Center, UC Santa Barbara | Rainfall, September 2025 to February 2026, summed per district | `data/chirps/season_a_2026_rainfall.csv` |
 | [geoBoundaries, Rwanda ADM2](https://www.geoboundaries.org/api/current/gbOpen/RWA/ADM2/) | geoBoundaries, from Open Data Rwanda, CC BY 4.0 | The 30 district boundaries: full detail to sum rainfall, simplified to draw the map | simplified copy in `data/boundaries/rwa_districts.geojson` |
+| SAS tables workbooks, 2019 to 2026 (one per year, listed in `data/raw/MANIFEST.csv`) | NISR, CC BY 4.0 | Season A district maize yield, large-farm maize yield, and farmers using improved seed, inorganic fertilizer, and irrigation, by farm type. Built into a back-series. Not yet on any page. | raw files in `data/raw/sas/`, cleaned in `data/history/season_a.csv` |
+| [Sector Boundary 2022](https://services5.arcgis.com/deNm5epdmeZgcm16/arcgis/rest/services/Sector_Boundary_2022/FeatureServer/1) | NISR | Official province, district, and sector codes (attributes only) | `data/reference/districts.csv`, `data/reference/sectors.csv` |
 
 Season A 2026 is the base file because it is the latest report that prints district maize yield and district irrigation by farm type together. It covers the main maize season. It is not the whole year.
 
@@ -105,6 +107,36 @@ The NISR workbook is read only to check the report. Every one of the 930 transcr
 **The Table 29 footer.** In the workbook, Table 29 is titled "2026 Season B", but its footer reads "Source: NISR, SAS 2025". Every other sheet says SAS 2026. The printed report, page 57, reads "Source: NISR, SAS 2026". The report's own text gives the same national rates as the table: 13.1% of farmers, 11.5% of smallholders, and 56.2% of large farms. Both footers are recorded in `data/season_b_2026/footer_check.csv`. The evidence contract requires a person to resolve this, so the pages show Season B irrigation only after someone types the footer they read on the printed page, with their name and the date (see below). Mukunzi Jonathan read "Source: NISR, SAS 2026" on page 57 on 22 October 2026, so Season B irrigation is shown.
 
 On each district page, Season B gets the same cutoffs, without the rainfall gate, since the rainfall window is Season A's. The page says whether the named lever would also pass in Season B. It never changes the action. With the committed files, the seed gap also reaches its cutoff in 15 of the 19 seed districts. It does not in Rubavu (24.9 points), Gakenke, or Bugesera, and Ngororero has no Season B gap. The irrigation gap also reaches its cutoff in 6 of the 7 irrigation districts. Nyagatare is the exception, at 27.4 points against 30.
+
+### Raw files, codes, and the 2019–2026 back-series
+
+**Raw files.** Every file downloaded from a publisher sits unedited under `data/raw/`. `data/raw/MANIFEST.csv` gives each file's download URL, the NISR page that links it, the publisher, the licence, the day it was retrieved, its size, and its SHA-256. `python3 tools/raw_manifest.py record` downloads every URL again and refuses to write the manifest unless the download equals the local file byte for byte. All nine SAS workbooks passed on 22 October 2026. CI runs `python tools/raw_manifest.py`, which fails if a raw file changes or is not listed.
+
+**Codes.** `tools/fetch_reference.py` reads the attribute table of NISR's Sector Boundary 2022 layer. It writes 416 sectors and 30 districts with their official codes: province 1 to 5, district 11 to 57, sector 1101 to 5715. It checks that the codes nest and that the 30 district names, in order, are the names the SAS tables print. Cleaned tables join on `district_id`, not on spelling.
+
+**Back-series.** `tools/build_history.py` reads one Season A table set per year from the workbooks, 2019 to 2026, and writes `data/history/season_a.csv`. There are five measures:
+
+| lever | measure | farm types | unit |
+| --- | --- | --- | --- |
+| `maize_yield` | average maize yield | all (national row also by farm type) | kg/ha |
+| `maize_yield_lsf` | average maize yield on large farms | large | kg/ha; t/ha in 2019, as printed |
+| `seed` | farmers who used improved seed | all, smallholder, large | % |
+| `fertilizer` | farmers who used inorganic fertilizer | all, smallholder, large | % |
+| `irrigation` | farmers who practised irrigation | all, smallholder, large | % |
+
+Table numbers change every year, and so do the header layouts (2019 splits each farm type into Yes/No or Traditional/Improved columns; 2024 adds a Cereals column). The builder finds each column by its header text and stops if a column cannot be found exactly once. `data/history/quality.csv` records, for each year and measure, the table number, its full title as printed in the workbook, the count of numbers and blanks, the national value, and the district range, so a reader can see what was read.
+
+The rules are the ones used for the printed tables. A value is rounded half up to the digits the reports print: whole kg/ha, one decimal for percentages. The unrounded workbook value is kept beside it. An empty cell, a dash, or a zero is a blank, recorded as `empty`, `dash`, or `zero`. A district with no row is `absent`. The reports print a workbook zero as a dash, so it is not shown as zero.
+
+The builder writes nothing unless these checks pass:
+
+- 30 districts in every district table
+- percentages between 0 and 100, yields above zero
+- the national value inside the district range
+- the national large-farm maize yield equal in both yield tables of a year
+- every 2026 value equal to the printed Season A 2026 report cell already transcribed in `data/season_a_2026/cells.csv`; all 343 agree, blanks included
+
+With the committed files the series has 2,742 rows, 2,487 of them numbers. The workbooks are NISR's own published tables, but for 2019 to 2025 they have not been checked against the printed reports cell by cell. Definitions can move between years. For example, 38.6% of farmers used inorganic fertilizer in Season A 2022 and 59.6% in 2023. The titles in `quality.csv` are the place to start before reading a change as a trend.
 
 ### Rainfall gate
 
@@ -182,6 +214,7 @@ Other figures follow the same rule. The cutoffs cite the evidence contract. Rain
 - No national rate copied onto a district.
 - No re-estimate of the NST2 irrigated-hectare total.
 - No Season B or Season C figure in place of a Season A cell.
+- No claim that the 2019–2025 tables use the same definitions every year.
 
 ## The evidence contract
 
@@ -217,6 +250,10 @@ To resolve the Table 29 footer, open page 57 and read the line under the table. 
 | `data/season_b_2026/cells.csv` | transcribed Season B 2026 cells, Tables 18, 23, and 29 |
 | `data/season_b_2026/signoff.csv` | Season B sign-off sheet |
 | `data/season_b_2026/footer_check.csv` | report and workbook footers, and the person who resolved them |
+| `data/raw/` | unedited downloads; `MANIFEST.csv` gives each file's URL, licence, and SHA-256 |
+| `data/reference/` | official NISR province, district, and sector codes |
+| `data/history/season_a.csv` | Season A back-series, 2019 to 2026 |
+| `data/history/quality.csv` | what was read from each workbook table, and its title |
 | `data/chirps/season_a_2026_rainfall.csv` | district rainfall totals |
 | `data/boundaries/rwa_districts.geojson` | simplified district outlines for the map, CC BY 4.0 |
 | `umusaruro/cells.py` | cell loader; blanks raise `BlankCell` |
@@ -224,13 +261,15 @@ To resolve the Table 29 footer, open page 57 and read the line under the table. 
 | `umusaruro/rules.py` | cutoffs and `classify` |
 | `umusaruro/signoff.py` | sign-off sheets and review, both seasons |
 | `umusaruro/footers.py` | whether the Table 29 footer has been resolved by a person |
+| `umusaruro/history.py` | back-series loader; blanks raise `BlankCell` |
+| `umusaruro/xlsx.py` | standard-library XLSX reader used by the tools |
 | `config/` | Django settings, URLs, and WSGI entry point |
 | `sheet/sheet.py` | builds each page's figures from the cells, rainfall, and rules |
 | `sheet/stats.py` | `Source` and `Stat`: a number cannot exist without its source |
 | `sheet/mapsvg.py` | projects the outlines into the SVG map |
 | `sheet/templates/`, `sheet/static/` | pages and style sheet |
 | `sheet/tests.py` | page tests, including the audit for numbers without a source |
-| `tools/` | transcription, rainfall, map, and sign-off scripts |
+| `tools/` | transcription, back-series, manifest, reference-code, rainfall, map, and sign-off scripts |
 | `tests/` | unit tests for the data and rules modules |
 
 ## Running it
@@ -288,6 +327,14 @@ python3 tools/transcribe_season_b.py /tmp/sas2026b.txt "Tables_2026 Season B.xls
 
 The script stops if any cell disagrees with the workbook. It keeps any footer already typed in `footer_check.csv`.
 
+To check the raw files, refresh the codes, and rebuild the back-series (standard library only):
+
+```bash
+python3 tools/raw_manifest.py          # every raw file against its SHA-256
+python3 tools/fetch_reference.py       # NISR codes, needs network
+python3 tools/build_history.py         # data/history/season_a.csv and quality.csv
+```
+
 To rebuild the rainfall totals, download the six monthly files (`chirps-v2.0.2025.09.tif.gz` through `chirps-v2.0.2026.02.tif.gz`) and the geoBoundaries GeoJSON into `/tmp/chirps`, then:
 
 ```bash
@@ -312,7 +359,7 @@ python3 -m venv .venv
 
 GitLab pipelines run on merge requests and on pushes to `dev` and `main`. There are two jobs:
 
-- `evidence` compiles the Python modules, runs the unit tests, and checks that both copies of the evidence contract are present.
+- `evidence` compiles the Python modules, checks every raw file against `data/raw/MANIFEST.csv`, runs the unit tests (one rebuilds the back-series from the raw workbooks and requires the committed file), and checks that both copies of the evidence contract are present.
 - `app` installs `requirements.txt` and runs the site the way it is deployed, with `DEBUG` off. It runs Django's system check, collects the static files, and runs the site tests.
 
 ## Where the work stands
@@ -325,7 +372,8 @@ GitLab pipelines run on merge requests and on pushes to `dev` and `main`. There 
 | 3. Rules | on `dev` |
 | 4. Django application: map, district page, method page | on `dev` |
 | 5. Season B 2026 beside Season A | built; Table 29 footer confirmed; Season B sign-off waits for a person |
-| 6. Public repository, deployed link, submission | due 23:59, 30 October 2026 |
+| 6. Data pipeline: raw-file manifest, NISR codes, 2019–2026 back-series | built; not yet on any page |
+| 7. Public repository, deployed link, submission | due 23:59, 30 October 2026 |
 
 ## Sources
 
