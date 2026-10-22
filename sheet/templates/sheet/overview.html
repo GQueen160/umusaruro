@@ -1,0 +1,75 @@
+{% extends "sheet/base.html" %}
+{% load stats %}
+{% block title %}Umusaruro: district maize action sheet{% endblock %}
+{% block content %}
+<section class="lead">
+  <h1>Which lever is each district's maize furthest behind on?</h1>
+  <p>Rwanda's maize yield in <span class="ref">Season A 2026</span> was
+    {% stat national.all.0 %} ({% stat national.all.1 %}) on all farms:
+    {% stat national.ssf.1 %} for smallholders and {% stat national.lsf.1 %} for large farms.
+    The <span class="ref">PSTA 5</span> milestones are {% stat milestones.0 %} for <span class="ref">{{ milestone_columns.0 }}</span>
+    and {% stat milestones.1 %} for <span class="ref">{{ milestone_columns.1 }}</span>.
+    {% stat above_count %} reached the later milestone.</p>
+  <p>For each district the sheet compares smallholders with large farms on irrigation and improved seed, names the
+    lever with the wider gap under fixed rules, and adds inorganic fertilizer when that also lags.
+    A gap is not a cause; read the <a href="{% url 'method' %}">method</a> before acting on a label.</p>
+</section>
+
+<section class="map-block">
+  <figure class="map">
+    <svg viewBox="0 0 {{ map.width }} {{ map.height }}" role="img" aria-labelledby="map-title">
+      <title id="map-title">Rwanda's districts coloured by the action the rules name</title>
+      {% for row, shape in regions %}
+      <a href="{% url 'district' row.slug %}" class="region action-{{ row.action|default:'none' }}{% if row.above %} above{% endif %}">
+        <title>{{ row.name }}: {{ row.action_label }}{% if row.fertilizer_named %}, fertilizer also named{% endif %}</title>
+        <path d="{{ shape.path }}"/>
+      </a>
+      {% endfor %}
+      {% for row, shape in regions %}{% if row.above %}
+      <circle class="milestone-dot" cx="{{ shape.x }}" cy="{{ shape.y }}" r="6"><title>{{ row.name }} is at or above the later milestone</title></circle>
+      {% endif %}{% endfor %}
+    </svg>
+    <figcaption>District outlines: geoBoundaries (Open Data Rwanda), simplified for display.</figcaption>
+  </figure>
+  <div class="legend">
+    <h2>Action named by the rules</h2>
+    <ul>
+      {% for label, key, count in counts %}
+      <li><span class="swatch action-{{ key }}"></span>{{ label }}: {% stat count %}</li>
+      {% endfor %}
+      <li><span class="swatch dot"></span>At or above the <span class="ref">PSTA 5</span> milestone for <span class="ref">{{ milestone_columns.1 }}</span></li>
+    </ul>
+    <p>Inorganic fertilizer is named in {% stat fertilizer_count %}; in {% stat fertilizer_alone %} of them, no action is
+      named, so fertilizer appears there only as a note. Large farms report high input use
+      almost everywhere, so read seed and fertilizer labels as the common case, and compare the gap sizes and ranks
+      on each district page.</p>
+  </div>
+</section>
+
+<section>
+  <h2>All districts</h2>
+  <div class="table-wrap">
+  <table class="districts">
+    <caption>Maize yield from <span class="ref">SAS Season A 2026</span> Table <span class="ref">13</span>. Gaps are large farms minus
+      smallholders, in percentage points: irrigation Table <span class="ref">31</span>, improved seed (all crops) Table <span class="ref">20</span>,
+      inorganic fertilizer (all crops) Table <span class="ref">25</span>.</caption>
+    <thead>
+      <tr><th scope="col">District</th><th scope="col">Maize</th><th scope="col">Action</th>
+        <th scope="col" class="num">Irrigation gap</th><th scope="col" class="num">Seed gap</th><th scope="col" class="num">Fertilizer gap</th></tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <th scope="row"><a href="{% url 'district' row.slug %}">{{ row.name }}</a></th>
+        <td class="num">{% stat row.maize_t compact=True %}</td>
+        <td><span class="pill action-{{ row.action|default:'none' }}">{{ row.action_label }}</span>{% if row.fertilizer_named %} <span class="pill fert">+ fertilizer</span>{% endif %}</td>
+        <td class="num">{% stat row.irrigation_gap compact=True %}</td>
+        <td class="num">{% stat row.seed_gap compact=True %}</td>
+        <td class="num">{% stat row.fertilizer_gap compact=True %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endblock %}
