@@ -1,0 +1,15 @@
+{% load stats %}<section>
+  <h2>Maize yield, <span class="ref">Season A 2026</span></h2>
+  <dl class="facts">
+    <div><dt>All farms in {{ s.name }}</dt><dd>{% stat s.maize_kg %} = {% stat s.maize_t %}</dd></div>
+    <div><dt>Large farms in {{ s.name }}</dt><dd>{% stat s.large_maize_kg %}{% if not s.large_maize_kg.blank %} = {% stat s.large_maize_t %}{% endif %}</dd></div>
+  </dl>
+  <ul class="milestones">
+    {% for m in s.milestones %}
+    <li class="{% if m.above %}above{% elif m.above is None %}unknown{% else %}below{% endif %}">
+      <span class="ref">PSTA 5</span> milestone for <span class="ref">{{ m.column }}</span>: {% stat m.target %} —
+      {% if m.above %}at or above{% elif m.above is None %}cannot be compared (blank cell){% else %}below{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</section>
