@@ -1,0 +1,52 @@
+{% load static %}
+<!doctype html>
+<html lang="rw">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Umusaruro</title>
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <link rel="stylesheet" href="{% static 'farm/vendor/leaflet.css' %}">
+  <link rel="stylesheet" href="{% static 'farm/farm.css' %}">
+</head>
+<body>
+  <div id="map"></div>
+
+  <form id="search" role="search">
+    <label class="sr" for="q">Shakisha umudugudu</label>
+    <input id="q" name="q" autocomplete="off" placeholder="Shakisha umudugudu">
+    <p class="hint">Search a village</p>
+    <div id="results" hidden></div>
+  </form>
+
+  <div class="map-tools">
+    <button type="button" id="where" class="tool">Aho ndi</button>
+    <button type="button" id="voice" class="tool voice">Vuga</button>
+  </div>
+
+  <section id="sheet" aria-live="polite">
+    <p class="brand">Umusaruro <span>Inama ku murima wawe</span></p>
+    <p id="prompt">Kanda ku karita aho uzahinga.<br><span>Tap the map where you will plant.</span></p>
+    <div id="talk"></div>
+    <p id="place" hidden></p>
+
+    <details id="ladder">
+      <summary>Hindura ahantu <span>District, sector, cell, village</span></summary>
+      <label>Akarere <select id="pick-district"></select></label>
+      <label>Umurenge <select id="pick-sector" disabled></select></label>
+      <label>Akagari <select id="pick-cell" disabled></select></label>
+      <label>Umudugudu <select id="pick-village" disabled></select></label>
+    </details>
+
+    <div id="crops"></div>
+    <div id="advice"></div>
+    <form id="target" hidden></form>
+    <div id="plans"></div>
+    <p class="quiet"><a href="{% url 'overview' %}">Urutonde rw'uturere</a> · numbers for planners</p>
+  </section>
+
+  {{ crops|json_script:"crop-data" }}
+  <script src="{% static 'farm/vendor/leaflet.js' %}"></script>
+  <script src="{% static 'farm/farm.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+{% load stats %}<article class="panel-sheet" aria-labelledby="panel-title">
+  <p class="eyebrow">District sheet</p>
+  <h1 id="panel-title">{{ s.name }}</h1>
+  {% include "sheet/parts/action.html" %}
+  {% include "sheet/parts/maize.html" %}
+  {% include "sheet/parts/trend.html" with levers=False %}
+  <section>
+    <h2>Smallholders against large farms</h2>
+    <div class="table-wrap">
+    <table class="levers">
+      <thead><tr><th scope="col">Lever, percentage of farmers</th><th scope="col" class="num">Smallholders</th>
+        <th scope="col" class="num">Large farms</th><th scope="col" class="num">Gap</th></tr></thead>
+      <tbody>
+        {% for lever in s.levers %}
+        <tr><th scope="row">{{ lever.label }}</th><td class="num">{% stat lever.small compact=True %}</td>
+          <td class="num">{% stat lever.large compact=True %}</td><td class="num">{% stat lever.gap compact=True %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </section>
+  <p class="panel-more"><a class="button" href="{% url 'district' s.slug %}">Open the full sheet</a>
+    with ranks, cutoffs, Season B, rainfall, and the year-by-year levers.</p>
+</article>

@@ -1,0 +1,34 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Umusaruro{% endblock %}</title>
+  <meta name="description" content="District maize action sheet for Rwanda, from published NISR survey tables.">
+  <link rel="stylesheet" href="{% static 'sheet/style.css' %}">
+  <script src="{% static 'sheet/map.js' %}" defer></script>
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="{% url 'overview' %}">Umusaruro</a>
+    <span class="tag">District maize action sheet, <span class="ref">Season A 2026</span></span>
+    <nav>
+      <a href="{% url 'field' %}">Farmer map</a>
+      <a href="{% url 'overview' %}">Map</a>
+      <a href="{% url 'method' %}">Method</a>
+    </nav>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+  <footer>
+    <p>Every number names its survey, table and year; hover a citation for the full source, click it for the document.
+      A blank cell in a source table stays blank here. It is never shown as zero.
+      <span class="unchecked-key">Dotted underline</span>: not yet checked by a second person against the printed table.</p>
+    <p>Sources: NISR Seasonal Agricultural Survey, MINAGRI <span class="ref">PSTA 5</span>, CHIRPS (Climate Hazards Center, UC Santa Barbara).
+      District outlines: geoBoundaries, from Open Data Rwanda, CC BY <span class="ref">4.0</span>.
+      Built with model assistance; see the <a href="{% url 'method' %}">method page</a>.
+      Entry in the agriculture track of the <a href="https://statistics.gov.rw/about/hackathon/2026-hackathon-competition">NISR <span class="ref">2026</span> Big Data Hackathon</a>.</p>
+  </footer>
+</body>
+</html>

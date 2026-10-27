@@ -1,0 +1,91 @@
+{% extends "sheet/base.html" %}
+{% load stats %}
+{% block title %}{{ s.name }}: Umusaruro{% endblock %}
+{% block content %}
+<nav class="crumbs"><a href="{% url 'overview' %}">All districts</a> / {{ s.name }}</nav>
+<h1>{{ s.name }}</h1>
+
+{% include "sheet/parts/action.html" %}
+{% include "sheet/parts/maize.html" %}
+{% include "sheet/parts/trend.html" with levers=True %}
+
+<section>
+  <h2>Smallholders against large farms in {{ s.name }}</h2>
+  <div class="table-wrap">
+  <table class="levers">
+    <thead>
+      <tr><th scope="col">Lever, percentage of farmers</th><th scope="col">Smallholders</th><th scope="col">Large farms</th>
+        <th scope="col">Gap</th><th scope="col">Rank of the gap</th><th scope="col">Cutoff</th><th scope="col">Passes</th></tr>
+    </thead>
+    <tbody>
+      {% for lever in s.levers %}
+      <tr>
+        <th scope="row">{{ lever.label }}</th>
+        <td class="num">{% stat lever.small %}</td>
+        <td class="num">{% stat lever.large %}</td>
+        <td class="num">{% stat lever.gap %}</td>
+        <td class="num">{% if lever.rank %}{% stat lever.rank %}{% else %}not ranked{% endif %}</td>
+        <td class="num">{% stat lever.cutoff %}</td>
+        <td>{% if lever.fires %}yes{% else %}no{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="note">The first rank is the widest gap among the districts where both cells are printed. Seed and fertilizer
+    cover all crops: the maize-only seed rate is national, with no district column (see the method page).
+    Irrigation also needs fewer smallholders irrigating than the line on the method page.</p>
+</section>
+
+<section class="season-b">
+  <h2><span class="ref">Season B 2026</span> as a check</h2>
+  <p>Season B is the year's second season, with its own report and its own table numbers. The same cutoffs are applied
+    to it here, without the rainfall gate. It does not change the action, which comes from Season A only.
+    <a href="{% url 'method' %}#season-b">How Season B is read</a>.</p>
+  {% if s.season_b_note %}<p class="b-note">{% parts s.season_b_note %}</p>{% endif %}
+  <div class="table-wrap">
+  <table class="levers">
+    <thead>
+      <tr><th scope="col">Lever, percentage of farmers</th><th scope="col" class="num">Smallholders</th>
+        <th scope="col" class="num">Large farms</th><th scope="col" class="num">Season B gap</th>
+        <th scope="col" class="num">Season A gap</th><th scope="col">Would pass in Season B</th></tr>
+    </thead>
+    <tbody>
+      {% for row in s.season_b %}
+      <tr>
+        <th scope="row">{{ row.label }}</th>
+        {% if row.withheld %}
+        <td colspan="3" class="withheld">Not shown until a second person confirms this table's footer</td>
+        {% else %}
+        <td class="num">{% stat row.small %}</td>
+        <td class="num">{% stat row.large %}</td>
+        <td class="num">{% stat row.gap %}</td>
+        {% endif %}
+        <td class="num">{% stat row.season_a_gap %}</td>
+        <td>{% if row.withheld %}not shown{% elif row.passes is None %}no gap{% elif row.passes %}yes{% else %}no{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="note">The survey samples few large farms in each district, so one farm can move a large-farm percentage a
+    long way between seasons. Read a disagreement as a reason to look closer, not as a correction.</p>
+</section>
+
+<section>
+  <h2>Rainfall gate</h2>
+  <p>September to February rainfall in {{ s.name }} was {% stat s.rain_total %}, the mean over {% stat s.rain_cells %}
+    whose centres fall inside the district. The median of the districts is {% stat s.rain_median %}, so {{ s.name }} is
+    {% if s.rain_below %}<strong>below</strong>{% else %}<strong>above</strong>{% endif %} the median.
+    Rainfall only decides whether irrigation can be named first. It never replaces a survey cell.</p>
+</section>
+
+<section class="checked">
+  <h2>Second-person check</h2>
+  <p>{% stat s.checked %} of {% stat s.shown %} on this page have been checked by a second person against the printed table.</p>
+</section>
+
+<nav class="others" aria-label="Other districts">
+  {% for name in districts %}<a href="{% url 'district' name|lower %}"{% if name == s.name %} aria-current="page"{% endif %}>{{ name }}</a>{% endfor %}
+</nav>
+{% endblock %}
