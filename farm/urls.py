@@ -1,0 +1,15 @@
+from django.urls import path
+
+from farm import views
+
+urlpatterns = [
+    path("", views.home, name="field"),
+    path("api/boundaries/", views.boundaries, name="field_boundaries"),
+    path("api/search/", views.search_places, name="field_search"),
+    path("api/places/", views.place_children, name="field_places"),
+    path("api/locate/", views.locate_place, name="field_locate"),
+    path("api/advice/", views.advice_view, name="field_advice"),
+    path("api/hear/", views.hear_view, name="field_hear"),
+    path("api/plans/", views.plans, name="field_plans"),
+    path("api/plans/save/", views.save_plan, name="field_save"),
+]
