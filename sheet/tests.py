@@ -61,6 +61,10 @@ def audit(html: str) -> DigitAudit:
 
 
 def pages():
+    from sheet.advisor import CROPS
+    yield reverse("advisor")
+    for key in CROPS:
+        yield reverse("crop", args=[key])
     yield reverse("overview")
     yield reverse("method")
     for name in sheet.districts():
@@ -127,6 +131,23 @@ class PageTests(SimpleTestCase):
 
     def test_unknown_district_is_404(self):
         self.assertEqual(self.client.get("/district/atlantis/").status_code, 404)
+
+    def test_unknown_crop_is_404(self):
+        self.assertEqual(self.client.get("/advisor/coffee/").status_code, 404)
+
+    def test_advisor_is_arranged_by_crop(self):
+        html = self.client.get(reverse("advisor")).content.decode()
+        self.assertNotIn("maize action sheet", html.lower())
+        self.assertIn("Before planting", html)
+        self.assertIn("Ibigori", html)
+        self.assertIn("Ibishyimbo", html)
+        maize = self.client.get(reverse("crop", args=["maize"])).content.decode()
+        self.assertIn("1,994 kg/ha", maize)
+        self.assertIn("Nyagatare", maize)
+        self.assertIn("2019", maize)
+        beans = self.client.get(reverse("crop", args=["beans"])).content.decode()
+        self.assertIn("does not set the large-farm yield as a target", beans)
+        self.assertIn("blank (dash printed)", self.client.get(reverse("crop", args=["wheat"])).content.decode())
 
     def test_no_number_without_its_source(self):
         for url in pages():

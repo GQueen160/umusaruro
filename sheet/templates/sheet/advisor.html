@@ -1,0 +1,97 @@
+{% extends "sheet/base.html" %}
+{% load stats %}
+{% block title %}Umusaruro: cultivation advisor{% endblock %}
+{% block content %}
+<section class="lead">
+  <h1>An advisor for the whole cultivation journey</h1>
+  <p>Umusaruro reads the published survey and keeps each finding under the crop it belongs to.
+    The journey is the same for a farmer, a sector office, a district, and the ministry:
+    before planting, in the field, and after harvest.</p>
+  <p><span class="ref">Season A 2026</span> Table <span class="ref">13</span> prints a yield for
+    {% stat crop_count %}. Open a crop to see its district yields, and, where the report prints them,
+    its national seed and harvest-loss rows. A blank cell stays blank.</p>
+</section>
+
+<section>
+  <h2>Who is reading</h2>
+  <div class="who">
+    <article>
+      <p class="eyebrow">Farmer</p>
+      <h3>One field</h3>
+      <p>Start on the <a href="{% url 'field' %}">farmer map</a>. Walk district, sector, cell, and village, then choose the crop.
+        The pin is the village. The yield is the district’s, because the survey is not published per village.</p>
+    </article>
+    <article>
+      <p class="eyebrow">Sector</p>
+      <h3>The district row</h3>
+      <p>The survey does not print a sector table. A sector office reads the district it sits in.
+        The place hierarchy still names the sector, so the field is not mixed up with another district.</p>
+    </article>
+    <article>
+      <p class="eyebrow">District</p>
+      <h3>Yield, then the shared levers</h3>
+      <p>Each crop page lists that crop’s yield in all <span class="ref">30</span> districts.
+        Irrigation, improved seed, and inorganic fertilizer are not in those rows.
+        They cover every crop together on the <a href="{% url 'overview' %}">district map</a>.</p>
+    </article>
+    <article>
+      <p class="eyebrow">Ministry</p>
+      <h3>The national row</h3>
+      <p>The national yield is the Rwanda row of the same table.
+        The <span class="ref">PSTA 5</span> yield milestone in this project is for maize.
+        Other crops are read from the survey, not against that milestone.</p>
+    </article>
+  </div>
+</section>
+
+<section>
+  <h2>The journey</h2>
+  <div class="journey">
+    <article>
+      <p class="eyebrow">Before</p>
+      <h3>Before planting</h3>
+      <p>Improved seed, where Table <span class="ref">21</span> names the crop. That table is national.
+        It is not copied onto a district. The report has no soil test and no seed variety name.</p>
+    </article>
+    <article>
+      <p class="eyebrow">Field</p>
+      <h3>In the field</h3>
+      <p>District yield from Table <span class="ref">13</span>, and large-farm yield from Table <span class="ref">14</span>.
+        Maize also has the <span class="ref">PSTA 5</span> milestones and the <span class="ref">2019</span> to
+        <span class="ref">2026</span> yield series, on each district sheet.</p>
+    </article>
+    <article>
+      <p class="eyebrow">After</p>
+      <h3>After harvest</h3>
+      <p>National use and post-harvest loss from Table <span class="ref">16</span>, where that crop is printed.
+        There is no district store in this survey.</p>
+    </article>
+  </div>
+</section>
+
+{% for family in families %}
+<section id="{{ family.key }}">
+  <h2>{{ family.en }} <span class="rw">{{ family.rw }}</span></h2>
+  <div class="crop-grid">
+    {% for crop in family.crops %}
+    <article class="crop-card">
+      <a href="{% url 'crop' crop.key %}">
+        <span class="rw">{{ crop.rw }}</span>
+        <strong>{{ crop.en }}</strong>
+      </a>
+      <span class="crop-yield">{% stat crop.national %}</span>
+      <span class="note">{% stat crop.printed %} print a yield{% if crop.milestone %} · maize milestone{% endif %}{% if crop.trend %} · eight-year series{% endif %}</span>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endfor %}
+
+<section>
+  <h2>Findings that belong to every crop</h2>
+  <p>Tables <span class="ref">20</span>, <span class="ref">25</span>, and <span class="ref">31</span> do not name a crop.
+    They count farmers using improved seed, inorganic fertilizer, and irrigation, for all crops together.
+    Those findings, the rainfall gate, and the rules live on the <a href="{% url 'overview' %}">district map</a>
+    and the <a href="{% url 'method' %}">method</a> page. Each crop page points back there. They are not restated as if they were a maize-only result.</p>
+</section>
+{% endblock %}

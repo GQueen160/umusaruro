@@ -1,0 +1,125 @@
+{% extends "sheet/base.html" %}
+{% load stats %}
+{% block title %}{{ crop.en }} · Umusaruro{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'advisor' %}">Advisor</a> / <a href="{% url 'advisor' %}#{{ family.key }}">{{ family.en }}</a> / {{ crop.en }}</p>
+<h1>{{ crop.rw }} <span class="rw">{{ crop.en }}</span></h1>
+<p>In <span class="ref">Season A 2026</span>, the yield on all farms in Rwanda is {% stat national %}
+  (Table <span class="ref">13</span>). Large farms, nationally, are {% stat national_large %}
+  (Table <span class="ref">14</span>). A blank stays blank. It is not zero.</p>
+{% if crop.group %}
+<p class="note">The survey prints this row on its own. This page does not add the other rows up to make it.</p>
+{% endif %}
+
+<section>
+  <h2>Who is reading</h2>
+  <div class="who">
+    <article>
+      <p class="eyebrow">Farmer</p>
+      <p>On the <a href="{% url 'field' %}">farmer map</a>, choose the village and then {{ crop.rw }}.
+        The advice uses this district yield. The survey is not published for the village.</p>
+    </article>
+    <article>
+      <p class="eyebrow">Sector</p>
+      <p>There is no sector figure for {{ crop.en }}. Read the district row below for the district the sector sits in.</p>
+    </article>
+    <article>
+      <p class="eyebrow">District</p>
+      <p>The table is this crop only. Irrigation and fertilizer for the district are on the
+        <a href="{% url 'overview' %}">district map</a>, because those tables cover every crop together.</p>
+    </article>
+    <article>
+      <p class="eyebrow">Ministry</p>
+      <p>The national yield is {% stat national %}.
+        {% if crop.milestone %}The <span class="ref">PSTA 5</span> milestones apply to maize, and the comparison sits on each district sheet.{% else %}The <span class="ref">PSTA 5</span> yield milestone in this project is for maize. This crop is not scored against it.{% endif %}
+      </p>
+    </article>
+  </div>
+</section>
+
+<section>
+  <h2>The journey for {{ crop.en }}</h2>
+  <div class="journey">
+    <article>
+      <p class="eyebrow">Before planting</p>
+      {% if seed %}
+      <p>Improved seed for this crop is {% stat seed %} of seed, nationally (Table <span class="ref">21</span>).
+        The table has no district column, so the rate stays national.</p>
+      {% else %}
+      <p>Table <span class="ref">21</span> does not print improved seed for {{ crop.en }}.
+        Seed use on the district map is Table <span class="ref">20</span>, all crops together.</p>
+      {% endif %}
+      <p>The report has no soil test for this crop, and it does not name a seed variety.</p>
+    </article>
+    <article>
+      <p class="eyebrow">In the field</p>
+      <p>A yield is printed for {% stat printed %}.{% if has_blanks %} The other districts are blank in the report.{% endif %}</p>
+      {% if leaders %}
+      <p>The highest printed district yield is {% stat leaders.0.all_farms %}
+        {% if leaders|length == 1 %}in {{ leaders.0.name }}{% else %}in
+          {% for place in leaders %}{{ place.name }}{% if not forloop.last %}{% if forloop.revcounter == 2 %} and {% else %}, {% endif %}{% endif %}{% endfor %}
+        {% endif %}.</p>
+      {% endif %}
+      {% if large_is_lower %}
+      <p>Large farms are below all farms nationally, so this page does not set the large-farm yield as a target to catch.</p>
+      {% else %}
+      <p>Where a district’s large-farm cell is printed and higher, it is the higher published yield in the same survey. It is not a seed variety.</p>
+      {% endif %}
+      {% if crop.trend %}
+      <p>Maize yield from <span class="ref">2019</span> to <span class="ref">2026</span> is drawn on each
+        <a href="{% url 'overview' %}?layer=trend">district sheet</a>. No other crop has that series in this repository.</p>
+      {% else %}
+      <p>This repository’s eight-year yield series is maize only. {{ crop.en }} is the <span class="ref">Season A 2026</span> snapshot.</p>
+      {% endif %}
+    </article>
+    <article>
+      <p class="eyebrow">After harvest</p>
+      {% if loss %}
+      <p>Post-harvest loss is {% stat loss %} of use, nationally (Table <span class="ref">16</span>).
+        Sold is {% stat sold %}. Stored is {% stat stored %}.
+        These rows are national. They are not a district store.</p>
+      {% else %}
+      <p>Table <span class="ref">16</span> does not print a use row under this crop name.
+        Loss for the types inside the group is on those crops’ own pages.</p>
+      {% endif %}
+    </article>
+  </div>
+</section>
+
+<section>
+  <h2>District yields</h2>
+  <div class="table-wrap">
+    <table class="districts">
+      <caption>{{ crop.en }} yield, kilograms per hectare, <span class="ref">SAS Season A 2026</span>.
+        All farms are Table <span class="ref">13</span>. Large farms are Table <span class="ref">14</span>.</caption>
+      <thead>
+        <tr>
+          <th scope="col">District</th>
+          <th scope="col" class="num">All farms</th>
+          <th scope="col" class="num">Large farms</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for place in places %}
+        <tr>
+          <th scope="row"><a href="{% url 'district' place.slug %}">{{ place.name }}</a></th>
+          <td class="num">{% stat place.all_farms compact=True %}</td>
+          <td class="num">{% stat place.large_farms compact=True %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>What was pulled for this crop</h2>
+  <ul>
+    <li><span class="ref">SAS Season A 2026</span> Table <span class="ref">13</span> and Table <span class="ref">14</span>, yield, from the Season A cell file.</li>
+    {% if seed %}<li>Table <span class="ref">21</span>, improved seed, national only.</li>{% endif %}
+    {% if loss %}<li>Table <span class="ref">16</span>, use and post-harvest loss, national only.</li>{% endif %}
+    {% if crop.trend %}<li>Season A maize yield, <span class="ref">2019</span> to <span class="ref">2026</span>, from the back-series. The charts are on the district sheets.</li>{% endif %}
+    <li>All-crop irrigation, seed, fertilizer, and the rainfall gate: the <a href="{% url 'overview' %}">district map</a>, explained on the <a href="{% url 'method' %}">method</a> page.</li>
+  </ul>
+</section>
+{% endblock %}

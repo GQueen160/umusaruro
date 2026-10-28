@@ -4,17 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Umusaruro{% endblock %}</title>
-  <meta name="description" content="District maize action sheet for Rwanda, from published NISR survey tables.">
+  <meta name="description" content="Agricultural advisor for Rwanda's crops, from published NISR survey tables. Before planting, in the field, and after harvest.">
   <link rel="stylesheet" href="{% static 'sheet/style.css' %}">
   <script src="{% static 'sheet/map.js' %}" defer></script>
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="{% url 'overview' %}">Umusaruro</a>
-    <span class="tag">District maize action sheet, <span class="ref">Season A 2026</span></span>
+    <a class="brand" href="{% url 'advisor' %}">Umusaruro</a>
+    <span class="tag">Cultivation advisor, <span class="ref">Season A 2026</span></span>
     <nav>
       <a href="{% url 'field' %}">Farmer map</a>
-      <a href="{% url 'overview' %}">Map</a>
+      <a href="{% url 'advisor' %}">Crops</a>
+      <a href="{% url 'overview' %}">District map</a>
       <a href="{% url 'method' %}">Method</a>
     </nav>
   </header>

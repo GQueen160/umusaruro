@@ -1,8 +1,12 @@
 # Umusaruro
 
-Umusaruro is a district maize action sheet for Rwanda. For each of the 30 districts, it shows Season A 2026 maize yield against the national PSTA 5 milestones. It then names the lever the published survey tables support: irrigation, or improved seed. Inorganic fertilizer is named on the same sheet when that table lags.
+Umusaruro is an agricultural advisor for the cultivation journey in Rwanda, from before planting to after harvest. It is arranged by crop. Under each crop it keeps the findings the published tables actually print for that crop: district yield, national improved seed where the crop is named, and national post-harvest loss where the crop is named.
 
-The readers are a district agronomist and a planner at the Ministry of Agriculture and Animal Resources (MINAGRI). They read the sheet. They do not type figures into it. Every number on a screen names its survey, table, and year. A blank in the source table stays blank. It is never shown as zero.
+The readers are a farmer, a sector office, a district agronomist, and a planner at the Ministry of Agriculture and Animal Resources (MINAGRI). They read the pages. They do not type figures into them. Every number on a screen names its survey, table, and year. A blank in the source table stays blank. It is never shown as zero.
+
+The survey is not published per sector or per village. A farmer picks the village on the map, and a sector office reads its district’s row. Irrigation, all-crop improved seed, and inorganic fertilizer are not printed crop by crop. Those three tables cover every crop together, so they stay on the district map, and every crop page points there.
+
+Maize is still the crop with a government yield milestone. The district map shows Season A 2026 maize yield against the PSTA 5 milestones, then names the lever the all-crop tables support: irrigation, or improved seed. Inorganic fertilizer is named when that table lags. That comparison is not repeated as if it were the yield target for beans, cassava, or the other crops.
 
 *Umusaruro* is Kinyarwanda for harvest. The project is an entry in the agriculture track of the [NISR 2026 Big Data Hackathon](https://statistics.gov.rw/about/hackathon/2026-hackathon-competition).
 
@@ -26,9 +30,9 @@ For one district:
 4. One action, irrigation or seed, from fixed rules. Fertilizer is named beside the action when it lags.
 5. The survey, table, year, and source link for every number.
 
-## Why maize
+## Where maize still has its own question
 
-Maize is the crop where a government target, a district-level survey figure, and an open public question all line up.
+Maize is the one crop where a government target, a district-level survey figure, and an open public question all line up. The other crops in Season A Table 13 have district yields on their own pages. They do not have this milestone.
 
 - PSTA 5 has a maize yield milestone, measured with the same survey that prints district yields.
 - Season A is the main maize season, and its report prints maize yield for every district.
@@ -194,7 +198,7 @@ The words the engine recognises (crops, measures, farm types, and the table titl
 
 The engine is checked against the hand-verified back-series. `tests/test_engine.py` reads every workbook the way an upload is read and requires each of the 2,735 values in `data/history/season_a.csv` to come out the same, blank reason included. The 7 districts that history records as absent from a table must produce no value.
 
-The upload screens, the dataset list, and the per-crop analysis come in the next merge requests.
+The crop pages read the transcribed Season A cells directly. The upload screens, the dataset list, and review of a newly detected table come in the next merge requests.
 
 ## The application
 
@@ -202,7 +206,10 @@ The sheet is a Django site in `sheet/`. The district sheet reads the committed C
 
 | Page | What it shows |
 | --- | --- |
-| `/` | the national yield against both PSTA 5 milestones, a map of the 30 districts with four layers, and a table of every district's yield, action, and three gaps. Clicking a district opens its sheet in a side panel. |
+| `/` | the farmer map: district, sector, cell, village, then the crops on that field, with district-level advice |
+| `/advisor/` | the crop hierarchy: cereals, roots, banana, legumes, and the other crops the survey prints, each with its journey |
+| `/advisor/<crop>/` | one crop: before planting, in the field, and after harvest, then the 30 district yields |
+| `/sheet/` | the district practice map: maize against the PSTA 5 milestones, because maize is the milestone crop, and the all-crop levers |
 | `/district/<name>/` | one district: the action and the reasons for it in sentences, yield against each milestone, maize yield across the eight Season A surveys since 2019 with the national line and the PSTA 5 milestone, the three levers with each gap's rank among the districts and, folded, each lever by farm type year by year, the Season B check, the rainfall gate, and how many of its cells a second person has checked |
 | `/district/<name>/panel/` | the same sheet, shortened, as a fragment for the side panel |
 | `/method/` | the rules and cutoffs, the districts within two points of a cutoff, the display rules, how Season B agrees with the actions, the Table 29 footer evidence, the workbook table read for each year of the back-series, and what the sheet does not claim |
@@ -325,7 +332,7 @@ export DJANGO_DEBUG=1
 
 The database and uploads go in `var/`; set `UMUSARURO_VAR` to put them elsewhere. `engine_load_sas` takes about ten seconds and skips workbooks already loaded.
 
-Then open <http://127.0.0.1:8000/>. `DJANGO_DEBUG=1` is for local work only.
+Then open <http://127.0.0.1:8000/> for the farmer map, or <http://127.0.0.1:8000/advisor/> for the crop hierarchy. `DJANGO_DEBUG=1` is for local work only.
 
 In production, set `DJANGO_SECRET_KEY` and `DJANGO_ALLOWED_HOSTS` (comma-separated host names), then run:
 
@@ -421,7 +428,7 @@ GitLab pipelines run on merge requests and on pushes to `dev` and `main`. There 
 | 7. Map layers, side panel, and trend charts from the back-series | built |
 | 9. Engine core: reader, detector, models, SAS preload | built |
 | 10. Engine screens: dataset list, upload, review and confirm | next |
-| 11. Per-crop analysis: drivers with validation, reports, comparison, map crop filter | after 10 |
+| 11. Crop advisor from the transcribed Season A cells. Engine screens, upload, and review remain next | on `dev` |
 | 8. Public repository, deployed link, submission | due 23:59, 30 October 2026 |
 
 ## Sources

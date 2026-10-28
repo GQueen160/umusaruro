@@ -1,6 +1,8 @@
 # Implementation report
 
-What was built on `dev` after the district sheet was rejected as the farmer interface. The classification engine and the published Season A numbers were kept. The front page was replaced.
+What was built on `dev`. The classification engine and the published Season A numbers were kept. The product is no longer a maize action sheet. It is a cultivation advisor: farmer, sector, district, and ministry, from before planting to after harvest, with each finding kept under the crop it belongs to.
+
+The farmer still starts on the map. Planners start at `/advisor/`, where the crops the survey prints are grouped (cereals, roots and tubers, banana, legumes, garden and other). Each crop page has the three stages and the district yield table. Irrigation, all-crop seed, and fertilizer stay on `/sheet/`, because those tables are not split by crop. Maize keeps the PSTA 5 comparison and the eight-year series. The other crops are not scored against that milestone.
 
 ## What the farmer sees
 

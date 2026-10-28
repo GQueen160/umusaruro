@@ -1,9 +1,13 @@
 {% extends "sheet/base.html" %}
 {% load stats %}
-{% block title %}Umusaruro: district maize action sheet{% endblock %}
+{% block title %}Umusaruro: district practice map{% endblock %}
 {% block content %}
 <section class="lead">
-  <h1>Which lever is each district's maize furthest behind on?</h1>
+  <h1>Which shared lever is each district furthest behind on?</h1>
+  <p>This map is the field-practice layer of the <a href="{% url 'advisor' %}">crop advisor</a>.
+    Yields, seed, and harvest loss sit under each crop. The levers below are Tables
+    <span class="ref">20</span>, <span class="ref">25</span>, and <span class="ref">31</span>, which count all crops together.
+    Maize is the crop the <span class="ref">PSTA 5</span> milestone is written for, so the yield on this map is maize.</p>
   <p>Rwanda's maize yield in <span class="ref">Season A 2026</span> was
     {% stat national.all.0 %} ({% stat national.all.1 %}) on all farms:
     {% stat national.ssf.1 %} for smallholders and {% stat national.lsf.1 %} for large farms.

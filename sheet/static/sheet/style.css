@@ -168,12 +168,32 @@ td.withheld { color: var(--muted); font-style: italic; }
 .milestones .below { color: #8b3a2a; }
 
 .others { display: flex; flex-wrap: wrap; gap: 0.35rem 0.9rem; font-size: 0.88rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+
+.who, .journey, .crop-grid { display: grid; gap: 0.75rem; }
+.who { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.journey { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.crop-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.who article, .journey article, .crop-card {
+  background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 0.8rem 0.9rem;
+}
+.who h3, .journey h3 { margin: 0.15rem 0 0.4rem; font-size: 1.05rem; }
+.who p, .journey p { margin: 0.35rem 0; }
+.crop-card { position: relative; display: flex; flex-direction: column; gap: 0.15rem; color: var(--ink); }
+.crop-card > a { color: inherit; text-decoration: none; }
+.crop-card > a::after { content: ""; position: absolute; inset: 0; }
+.crop-card:hover { border-color: var(--accent); }
+.crop-card .cite { position: relative; z-index: 1; }
+.crop-card .rw, h1 .rw, h2 .rw { color: var(--muted); font-weight: 500; }
+.crop-card strong { font-size: 1.05rem; }
+.crop-yield { font-size: 0.95rem; }
+h2 .rw { font-size: 0.85rem; margin-left: 0.4rem; }
 .others [aria-current] { font-weight: 700; color: var(--ink); text-decoration: none; }
 
 footer { border-top: 1px solid var(--line); padding: 1rem 1.25rem 2rem; color: var(--muted); font-size: 0.82rem; max-width: 1080px; margin: 2rem auto 0; }
 
 @media (max-width: 760px) {
   .map-block { grid-template-columns: 1fr; }
+  .who, .journey { grid-template-columns: 1fr; }
   h1 { font-size: 1.4rem; }
   .region-label { display: none; }
 }
