@@ -2,11 +2,13 @@ import json
 from decimal import Decimal, InvalidOperation
 
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET, require_POST
 
 from farm.advice import advise, crop_list
 from farm.models import FieldPlan
+from farm.role import READERS, by_group, current, known
+from umusaruro.lang import LANGS, safe_next, text
 from farm.places import (
     BOUNDARIES,
     by_id,
@@ -21,8 +23,45 @@ from farm.places import (
 from farm.talk import hear
 
 
-def home(request):
-    return render(request, "farm/home.html", {"crops": crop_list()})
+def entrance(request):
+    found = current(request)
+    if found is not None:
+        return redirect(found["home"])
+    return render(request, "farm/home.html", {
+        "crops": crop_list(),
+        "gate": True,
+        "farmers": by_group("farmer"),
+        "planners": by_group("planner"),
+    })
+
+
+def field(request):
+    if current(request) is None:
+        return redirect("entrance")
+    return render(request, "farm/home.html", {"crops": crop_list(), "gate": False})
+
+
+@require_POST
+def choose_role(request):
+    role = known(request.POST.get("role"))
+    if role is None:
+        return redirect("entrance")
+    request.session["reader"] = role
+    return redirect(READERS[role]["home"])
+
+
+@require_POST
+def clear_role(request):
+    request.session.pop("reader", None)
+    return redirect("entrance")
+
+
+@require_POST
+def set_lang(request):
+    lang = request.POST.get("lang")
+    if lang in LANGS:
+        request.session["lang"] = lang
+    return redirect(safe_next(request.POST.get("next")))
 
 
 @require_GET
@@ -55,10 +94,10 @@ def locate_place(request):
         lat = float(request.GET["lat"])
         lon = float(request.GET["lon"])
     except (KeyError, TypeError, ValueError):
-        return JsonResponse({"error": "Kanda ku karita."}, status=400)
+        return JsonResponse({"error": text(request, "need_village")}, status=400)
     place = locate(lon, lat)
     if place is None:
-        return JsonResponse({"error": "Aho wakandagiye ntibirimo mu Rwanda."}, status=404)
+        return JsonResponse({"error": text(request, "no_place")}, status=404)
     return JsonResponse({"place": place})
 
 
@@ -68,20 +107,20 @@ def advice_view(request):
     district = (body.get("district") or "").strip()
     crops = body.get("crops") or []
     if not district or not isinstance(crops, list):
-        return JsonResponse({"error": "Hitamo akarere n'igihingwa."}, status=400)
+        return JsonResponse({"error": text(request, "need_crop")}, status=400)
     place = district_place(district)
     if place is None:
-        return JsonResponse({"error": "Aka karere ntikabonetse."}, status=404)
-    return JsonResponse({"advice": advise(district, [str(crop) for crop in crops])})
+        return JsonResponse({"error": text(request, "unknown_district")}, status=404)
+    return JsonResponse({"advice": advise(district, [str(crop) for crop in crops], reader=_reader(request, body))})
 
 
 @require_POST
 def hear_view(request):
     body = _body(request)
-    text = str(body.get("text") or "").strip()
-    if not text:
-        return JsonResponse({"error": "Ntabwo navunikiwe ijambo."}, status=400)
-    return JsonResponse(hear(text))
+    heard = str(body.get("text") or "").strip()
+    if not heard:
+        return JsonResponse({"error": text(request, "empty_voice")}, status=400)
+    return JsonResponse(hear(heard, reader=_reader(request, body)))
 
 
 @require_GET
@@ -94,16 +133,16 @@ def save_plan(request):
     body = _body(request)
     place = by_id(str(body.get("village_id") or ""))
     if place is None:
-        return JsonResponse({"error": "Banza ukande umudugudu ku karita."}, status=400)
+        return JsonResponse({"error": text(request, "need_village")}, status=400)
     crops = body.get("crops") or []
     if not isinstance(crops, list) or not crops:
-        return JsonResponse({"error": "Hitamo igihingwa."}, status=400)
+        return JsonResponse({"error": text(request, "need_crop_only")}, status=400)
     try:
         target = Decimal(str(body.get("target_kg"))).quantize(Decimal("0.1"))
     except (InvalidOperation, TypeError):
-        return JsonResponse({"error": "Andika intego mu kg kuri hegitari."}, status=400)
+        return JsonResponse({"error": text(request, "bad_target")}, status=400)
     if target <= 0 or target > Decimal("100000"):
-        return JsonResponse({"error": "Intego ntiyemewe."}, status=400)
+        return JsonResponse({"error": text(request, "rejected_target")}, status=400)
     crop = str(body.get("target_crop") or crops[0])
     row = FieldPlan.objects.create(
         village_id=place["village_id"],
@@ -118,6 +157,11 @@ def save_plan(request):
         target_kg=target,
     )
     return JsonResponse({"plan": _plan(row)})
+
+
+def _reader(request, body: dict) -> str:
+    picked = known(str(body.get("reader") or "")) or known(request.session.get("reader"))
+    return picked or "farmer-large"
 
 
 def _body(request) -> dict:

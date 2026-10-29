@@ -3,7 +3,11 @@ from django.urls import path
 from farm import views
 
 urlpatterns = [
-    path("", views.home, name="field"),
+    path("", views.entrance, name="entrance"),
+    path("field/", views.field, name="field"),
+    path("role/", views.choose_role, name="role_choose"),
+    path("role/clear/", views.clear_role, name="role_clear"),
+    path("lang/", views.set_lang, name="lang"),
     path("api/boundaries/", views.boundaries, name="field_boundaries"),
     path("api/search/", views.search_places, name="field_search"),
     path("api/places/", views.place_children, name="field_places"),

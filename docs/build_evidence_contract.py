@@ -136,7 +136,7 @@ def build_docx():
     heading(doc, "1. The product", 1)
     body(
         doc,
-        "Umusaruro, the Kinyarwanda word for harvest, is a district maize action sheet. For one district it shows Season A 2026 maize yield against the PSTA 5 milestones, then the lever the published tables support: irrigation, or all-crop improved seed, with inorganic fertilizer named when that table lags. It is the agriculture track of the NISR 2026 Big Data Hackathon. A submission is a public Git repository, a deployed application, and documentation. The deadline is 23:59 on 30 October 2026.",
+        "Umusaruro, the Kinyarwanda word for harvest, is an agricultural advisor for the cultivation journey, arranged by crop. For each crop the Season A 2026 report prints, the crop page shows district yield, and, where that crop is named, national improved seed and national post-harvest loss. The district map still shows maize yield against the PSTA 5 milestones, then the lever the all-crop tables support: irrigation, or improved seed, with inorganic fertilizer named when that table lags. Maize is the milestone crop. The other crops are not scored against that milestone. It is the agriculture track of the NISR 2026 Big Data Hackathon. A submission is a public Git repository, a deployed application, and documentation. The deadline is 23:59 on 30 October 2026.",
     )
 
     heading(doc, "2. The milestones", 1)
@@ -166,14 +166,14 @@ def build_docx():
         doc,
         ["What", "Table", "Level"],
         [
-            ["Maize yield, kg/ha", "13", "District, plus national SSF and LSF rows"],
-            ["Large-farm yield, kg/ha", "14", "District. A dash stays blank."],
+            ["Yield of each crop Table 13 prints, kg/ha", "13", "District and national. Maize also has SSF and LSF rows."],
+            ["Large-farm yield of each crop, kg/ha", "14", "District and national. A dash stays blank."],
             ["Improved seed, all crops, % of farmers", "20", "District, by farm type"],
             ["Source of improved seed", "22", "District"],
             ["Inorganic fertilizer, % of farmers", "25", "District, by farm type"],
             ["Irrigation, % of farmers", "31", "District, by farm type"],
-            ["Maize seed 64.3% improved", "21", "National only. Method page."],
-            ["Maize post-harvest loss 0.3% of use", "16", "National only. No district store."],
+            ["Improved seed by crop, % of seed", "21", "National only. Not copied onto a district."],
+            ["Post-harvest loss by crop, % of use", "16", "National only. No district store."],
         ],
     )
     body(
@@ -420,7 +420,7 @@ def build_pdf():
     pdf_h(pdf, "1. The product")
     pdf_p(
         pdf,
-        "Umusaruro is a district maize action sheet. It shows Season A 2026 maize yield against the PSTA 5 milestones, then irrigation or all-crop improved seed, and names inorganic fertilizer when that table lags. Competition deadline: 23:59 on 30 October 2026. The submission is a public Git repository, a deployed application, and documentation.",
+        "Umusaruro is an agricultural advisor for the cultivation journey, arranged by crop. Crop pages show Season A 2026 district yield for every crop Table 13 prints, plus national seed (Table 21) and national post-harvest loss (Table 16) where those tables name the crop. The district map shows maize yield against the PSTA 5 milestones, then irrigation or all-crop improved seed, and names inorganic fertilizer when that table lags. Other crops are not scored against the maize milestone. Competition deadline: 23:59 on 30 October 2026. The submission is a public Git repository, a deployed application, and documentation.",
     )
     pdf_h(pdf, "2. PSTA 5 maize milestones, tonnes per hectare")
     pdf_table(
@@ -438,14 +438,14 @@ def build_pdf():
         pdf,
         ["What", "Table", "Level"],
         [
-            ["Maize yield, kg/ha", "13", "District, plus national rows"],
-            ["Large-farm yield, kg/ha", "14", "District. A dash stays blank."],
+            ["Each crop's yield, kg/ha", "13", "District and national"],
+            ["Each crop's large-farm yield", "14", "District and national. A dash stays blank."],
             ["Improved seed, all crops", "20", "District, by farm type"],
             ["Source of improved seed", "22", "District"],
             ["Inorganic fertilizer", "25", "District, by farm type"],
             ["Irrigation, % of farmers", "31", "District, by farm type"],
-            ["Maize seed 64.3% improved", "21", "National. Method page only."],
-            ["Maize loss 0.3% of use", "16", "National. No district store."],
+            ["Improved seed by crop", "21", "National. Not copied onto a district."],
+            ["Post-harvest loss by crop", "16", "National. No district store."],
         ],
         [62, 18, 102],
     )

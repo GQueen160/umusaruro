@@ -2,6 +2,8 @@
   "use strict";
 
   const crops = JSON.parse(document.getElementById("crop-data").textContent);
+  const ui = JSON.parse(document.getElementById("ui-copy").textContent);
+  const lang = document.body.dataset.lang || "en";
   const token = document.querySelector('meta[name="csrf-token"]').content;
   const state = { place: null, crops: [], advice: null, request: 0 };
   const pin = L.divIcon({ className: "", html: '<div class="pin"></div>', iconSize: [22, 22] });
@@ -12,6 +14,9 @@
   L.control.zoom({ position: "bottomright" }).addTo(map);
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
+    // The page sends Referrer-Policy: same-origin, so a tile request would
+    // leave with no Referer. OpenStreetMap then returns its blocked tile.
+    referrerPolicy: "origin",
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   }).addTo(map);
 
@@ -40,7 +45,7 @@
     const node = document.createElement("p");
     node.className = "bubble " + who;
     const label = document.createElement("b");
-    label.textContent = who === "you" ? "Wowe" : "Umusaruro";
+    label.textContent = who === "you" ? ui.you : ui.us;
     node.appendChild(label);
     node.appendChild(document.createTextNode(text));
     els.talk.appendChild(node);
@@ -69,9 +74,17 @@
     const strong = document.createElement("span");
     strong.textContent = line || place.district;
     els.place.appendChild(strong);
-    if (!place.village_id) {
+    if (!place.village_id && document.body.dataset.reader !== "sector") {
       const small = document.createElement("small");
-      small.textContent = "Kanda umudugudu wawe. Tap your village.";
+      small.textContent = ui.tap_village;
+      els.place.appendChild(small);
+    }
+    if (document.body.dataset.reader === "sector" && place.district) {
+      const link = document.createElement("a");
+      link.href = "/district/" + encodeURIComponent(place.district.toLowerCase()) + "/";
+      link.textContent = ui.open_district.replace("{name}", place.district);
+      const small = document.createElement("small");
+      small.appendChild(link);
       els.place.appendChild(small);
     }
     fly(place, place.village_id ? 15 : 11);
@@ -81,31 +94,38 @@
   function loadAdvice() {
     if (!state.place || !state.place.district || !state.crops.length) return;
     const mine = ++state.request;
-    post("/api/advice/", { district: state.place.district, crops: state.crops }).then(function (data) {
+    post("/api/advice/", { district: state.place.district, crops: state.crops, reader: document.body.dataset.reader || "" }).then(function (data) {
       if (mine !== state.request || !data.advice) return;
       state.advice = data.advice;
       renderAdvice(data.advice);
     });
   }
 
+  function paintFlag(kind) {
+    document.querySelectorAll(".flag-item").forEach(function (item) {
+      if (item.dataset.flag === kind) item.setAttribute("aria-current", "true");
+      else item.removeAttribute("aria-current");
+    });
+    const line = document.getElementById("flag-line");
+    if (!line) return;
+    const key = kind ? "flag_" + kind + "_line" : "flag_wait";
+    line.textContent = ui[key] || "";
+  }
+
   function renderAdvice(advice) {
     els.advice.textContent = "";
     const note = document.createElement("p");
     note.className = "note";
-    note.textContent = advice.note_rw;
+    note.textContent = advice["note_" + lang] || advice.note_en;
     els.advice.appendChild(note);
     advice.cards.forEach(function (card) {
       const box = document.createElement("article");
       box.className = "card " + card.kind;
       const title = document.createElement("h2");
-      title.textContent = card.title_rw;
-      const en = document.createElement("p");
-      en.className = "en";
-      en.textContent = card.title_en;
+      title.textContent = card["title_" + lang] || card.title_en;
       const body = document.createElement("p");
-      body.textContent = card.body_rw;
+      body.textContent = card["body_" + lang] || card.body_en;
       box.appendChild(title);
-      box.appendChild(en);
       box.appendChild(body);
       if (card.facts && card.facts.length) {
         const facts = document.createElement("div");
@@ -121,7 +141,8 @@
           link.rel = "noopener";
           link.textContent = fact.survey + " " + fact.table;
           item.appendChild(value);
-          item.appendChild(document.createTextNode(" " + fact.label));
+          const labels = fact.labels || {};
+          item.appendChild(document.createTextNode(" " + (labels[lang] || fact.label)));
           item.appendChild(document.createElement("br"));
           item.appendChild(link);
           facts.appendChild(item);
@@ -131,9 +152,11 @@
       els.advice.appendChild(box);
     });
     renderTarget(advice.target);
+    paintFlag(advice.flag);
   }
 
   function renderTarget(target) {
+    if (!els.target) return;
     els.target.textContent = "";
     if (!target) {
       els.target.hidden = true;
@@ -141,9 +164,11 @@
     }
     els.target.hidden = false;
     const title = document.createElement("h2");
-    title.textContent = "Intego: " + target.rw;
+    const names = {en: target.en, fr: target.fr, rw: target.rw};
+    const whys = {en: target.why_en, fr: target.why_fr, rw: target.why_rw};
+    title.textContent = (names[lang] || target.en);
     const why = document.createElement("p");
-    why.textContent = target.why_rw;
+    why.textContent = whys[lang] || target.why_en;
     const row = document.createElement("div");
     row.className = "stepper";
     const down = document.createElement("button");
@@ -172,7 +197,7 @@
     els.target.onsubmit = function (event) {
       event.preventDefault();
       if (!state.place || !state.place.village_id) {
-        bubble("us", "Banza ukande umudugudu ku karita.");
+        bubble("us", ui.need_village);
         return;
       }
       post("/api/plans/save/", {
@@ -182,10 +207,10 @@
         target_kg: input.value,
       }).then(function (data) {
         if (!data.ok) {
-          bubble("us", data.error || "Ntibyakunze.");
+          bubble("us", data.error || ui.failed);
           return;
         }
-        bubble("us", "Intego yabitswe: " + data.plan.target_kg + " kg kuri hegitari muri " + data.plan.village + ".");
+        bubble("us", ui.saved + ": " + data.plan.target_kg + " kg/ha · " + data.plan.village);
         loadPlans();
       });
     };
@@ -197,15 +222,24 @@
       const button = document.createElement("button");
       button.type = "button";
       button.className = "crop" + (state.crops.indexOf(crop.id) >= 0 ? " on" : "");
-      button.textContent = crop.rw;
+      button.textContent = crop[lang] || crop.en;
       const en = document.createElement("small");
-      en.textContent = crop.en;
+      en.textContent = lang === "rw" ? crop.en : crop.rw;
       button.appendChild(en);
       button.addEventListener("click", function () {
         const index = state.crops.indexOf(crop.id);
         if (index >= 0) state.crops.splice(index, 1);
         else if (state.crops.length < 4) state.crops.push(crop.id);
         paintCrops();
+        if (!state.crops.length) {
+          els.advice.textContent = "";
+          if (els.target) {
+            els.target.hidden = true;
+            els.target.textContent = "";
+          }
+          paintFlag(null);
+          return;
+        }
         loadAdvice();
       });
       els.crops.appendChild(button);
@@ -214,7 +248,7 @@
 
   function applyHeard(data) {
     bubble("you", data.heard);
-    bubble("us", data.reply_rw);
+    bubble("us", data["reply_" + lang] || data.reply_en);
     state.crops = data.crops || [];
     paintCrops();
     if (data.place) showPlace(data.place);
@@ -258,37 +292,37 @@
   };
 
   fetch("/api/places/").then(function (r) { return r.json(); }).then(function (data) {
-    fillSelect(picks.district, data.places, "Hitamo akarere");
+    fillSelect(picks.district, data.places, ui.opt_district);
   });
 
   picks.district.addEventListener("change", function () {
     const option = picks.district.selectedOptions[0];
-    fillSelect(picks.sector, [], "Hitamo umurenge");
-    fillSelect(picks.cell, [], "Hitamo akagari");
-    fillSelect(picks.village, [], "Hitamo umudugudu");
+    fillSelect(picks.sector, [], ui.opt_sector);
+    fillSelect(picks.cell, [], ui.opt_cell);
+    fillSelect(picks.village, [], ui.opt_village);
     if (!option || !option.dataset.place) return;
     const place = JSON.parse(option.dataset.place);
     showPlace({ district: place.name, lat: place.lat, lon: place.lon, village_id: "" });
     fetch("/api/places/?district=" + encodeURIComponent(place.name)).then(function (r) { return r.json(); }).then(function (data) {
-      fillSelect(picks.sector, data.places, "Hitamo umurenge");
+      fillSelect(picks.sector, data.places, ui.opt_sector);
     });
   });
 
   picks.sector.addEventListener("change", function () {
     const option = picks.sector.selectedOptions[0];
-    fillSelect(picks.cell, [], "Hitamo akagari");
-    fillSelect(picks.village, [], "Hitamo umudugudu");
+    fillSelect(picks.cell, [], ui.opt_cell);
+    fillSelect(picks.village, [], ui.opt_village);
     if (!option || !option.value) return;
     const place = JSON.parse(option.dataset.place);
     showPlace({ district: state.place.district, sector: place.name, sector_id: place.id, lat: place.lat, lon: place.lon, village_id: "" });
     fetch("/api/places/?sector_id=" + encodeURIComponent(place.id)).then(function (r) { return r.json(); }).then(function (data) {
-      fillSelect(picks.cell, data.places, "Hitamo akagari");
+      fillSelect(picks.cell, data.places, ui.opt_cell);
     });
   });
 
   picks.cell.addEventListener("change", function () {
     const option = picks.cell.selectedOptions[0];
-    fillSelect(picks.village, [], "Hitamo umudugudu");
+    fillSelect(picks.village, [], ui.opt_village);
     if (!option || !option.value) return;
     const place = JSON.parse(option.dataset.place);
     showPlace({
@@ -300,7 +334,7 @@
       village_id: "",
     });
     fetch("/api/places/?cell_id=" + encodeURIComponent(place.id)).then(function (r) { return r.json(); }).then(function (data) {
-      fillSelect(picks.village, data.places, "Hitamo umudugudu");
+      fillSelect(picks.village, data.places, ui.opt_village);
     });
   });
 
@@ -310,8 +344,42 @@
     showPlace(JSON.parse(option.dataset.place));
   });
 
+  const searchForm = document.getElementById("search");
+  const sheet = document.getElementById("sheet");
   let searchTimer = 0;
+  let searchLeave = 0;
+
+  function beginSearch() {
+    clearTimeout(searchLeave);
+    document.body.classList.add("searching");
+  }
+
+  function endSearch(pop) {
+    clearTimeout(searchLeave);
+    document.body.classList.remove("searching");
+    els.results.hidden = true;
+    if (!pop) return;
+    sheet.classList.remove("in");
+    void sheet.offsetWidth;
+    sheet.classList.add("in");
+  }
+
+  els.q.addEventListener("focus", beginSearch);
+  els.q.addEventListener("keydown", function (event) {
+    if (event.key !== "Escape") return;
+    endSearch(false);
+    els.q.blur();
+  });
+  searchForm.addEventListener("focusout", function () {
+    clearTimeout(searchLeave);
+    searchLeave = setTimeout(function () {
+      if (searchForm.contains(document.activeElement)) return;
+      endSearch(false);
+    }, 180);
+  });
+
   els.q.addEventListener("input", function () {
+    beginSearch();
     clearTimeout(searchTimer);
     const query = els.q.value.trim();
     if (query.length < 2) {
@@ -330,9 +398,10 @@
           rest.textContent = place.cell + " · " + place.sector + " · " + place.district;
           button.appendChild(name);
           button.appendChild(rest);
+          button.addEventListener("mousedown", function (event) { event.preventDefault(); });
           button.addEventListener("click", function () {
-            els.results.hidden = true;
             els.q.value = place.village;
+            endSearch(true);
             showPlace(place);
           });
           els.results.appendChild(button);
@@ -347,7 +416,7 @@
       .then(function (r) { return r.json(); })
       .then(function (data) {
         if (data.place) showPlace(data.place);
-        else bubble("us", data.error || "Ntabwo nabonye ahantu.");
+        else bubble("us", data.error || ui.no_fix);
       });
   }
 
@@ -355,34 +424,34 @@
 
   document.getElementById("where").addEventListener("click", function () {
     if (!navigator.geolocation) {
-      bubble("us", "Iyi mudasobwa ntayerekana aho uri. Kanda ku karita.");
+      bubble("us", ui.no_geo);
       return;
     }
     navigator.geolocation.getCurrentPosition(
       function (pos) { locateAt(pos.coords.latitude, pos.coords.longitude); },
-      function () { bubble("us", "Ntabwo nabonye aho uri. Kanda ku karita."); }
+      function () { bubble("us", ui.no_fix); }
     );
   });
 
   const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!Speech) {
     els.voice.addEventListener("click", function () {
-      bubble("us", "Iyi mudasobwa ntumva ijwi. Koresha amagambo cyangwa kanda ku karita.");
+      bubble("us", ui.no_voice);
     });
   } else {
     const ear = new Speech();
     ear.lang = "rw-RW";
     ear.interimResults = false;
-    ear.onstart = function () { els.voice.classList.add("live"); els.voice.textContent = "Ndumva…"; };
-    ear.onend = function () { els.voice.classList.remove("live"); els.voice.textContent = "Vuga"; };
+    ear.onstart = function () { els.voice.classList.add("live"); els.voice.textContent = ui.hearing; };
+    ear.onend = function () { els.voice.classList.remove("live"); els.voice.textContent = ui.voice; };
     ear.onerror = function () {
-      bubble("us", "Ntabwo numvise. Ongera uvuge, cyangwa andika izina ry'umudugudu.");
+      bubble("us", ui.not_heard);
     };
     ear.onresult = function (event) {
       const text = event.results[0][0].transcript;
-      post("/api/hear/", { text: text }).then(function (data) {
+      post("/api/hear/", { text: text, reader: document.body.dataset.reader || "" }).then(function (data) {
         if (!data.ok) {
-          bubble("us", data.error || "Ntabwo numvise.");
+          bubble("us", data.error || ui.not_heard);
           return;
         }
         applyHeard(data);
@@ -392,11 +461,12 @@
   }
 
   function loadPlans() {
+    if (!els.plans) return;
     fetch("/api/plans/").then(function (r) { return r.json(); }).then(function (data) {
       els.plans.textContent = "";
       if (!data.plans.length) return;
       const title = document.createElement("h2");
-      title.textContent = "Intego wabitse";
+      title.textContent = ui.plans;
       els.plans.appendChild(title);
       data.plans.forEach(function (plan) {
         const line = document.createElement("p");
