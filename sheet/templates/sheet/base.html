@@ -1,24 +1,52 @@
-{% load static %}<!doctype html>
-<html lang="en">
+{% load static %}
+{% load i18n_ui %}
+<!doctype html>
+<html lang="{{ lang }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Umusaruro{% endblock %}</title>
   <meta name="description" content="Agricultural advisor for Rwanda's crops, from published NISR survey tables. Before planting, in the field, and after harvest.">
-  <link rel="stylesheet" href="{% static 'sheet/style.css' %}">
+  <link rel="icon" href="{% static 'farm/logo.png' %}" type="image/png">
+  <link rel="stylesheet" href="{% static 'sheet/style.css' %}?v=2">
   <script src="{% static 'sheet/map.js' %}" defer></script>
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="{% url 'advisor' %}">Umusaruro</a>
-    <span class="tag">Cultivation advisor, <span class="ref">Season A 2026</span></span>
+    {% include "farm/lang.html" %}
+    <a class="brand" href="{% if reader %}{% url reader.home %}{% else %}{% url 'advisor' %}{% endif %}"><img class="mark" src="{% static 'farm/logo.png' %}" alt="">Umusaruro</a>
+    <span class="tag">{% say "tag" %}</span>
     <nav>
-      <a href="{% url 'field' %}">Farmer map</a>
-      <a href="{% url 'advisor' %}">Crops</a>
-      <a href="{% url 'overview' %}">District map</a>
-      <a href="{% url 'method' %}">Method</a>
+      {% if reader.id == "ministry" %}
+      <a href="{% url 'advisor' %}">{% say "nav_crops" %}</a>
+      <a href="{% url 'overview' %}">{% say "nav_districts" %}</a>
+      <a href="{% url 'method' %}">{% say "nav_method" %}</a>
+      {% elif reader.id == "district" %}
+      <a href="{% url 'overview' %}">{% say "nav_districts" %}</a>
+      <a href="{% url 'advisor' %}">{% say "nav_crops" %}</a>
+      <a href="{% url 'method' %}">{% say "nav_method" %}</a>
+      {% elif reader.id == "sector" %}
+      <a href="{% url 'field' %}">{% say "nav_sector" %}</a>
+      <a href="{% url 'method' %}">{% say "nav_method" %}</a>
+      {% else %}
+      <a href="{% url 'field' %}">{% say "nav_field" %}</a>
+      <a href="{% url 'advisor' %}">{% say "nav_crops" %}</a>
+      <a href="{% url 'overview' %}">{% say "nav_districts" %}</a>
+      <a href="{% url 'method' %}">{% say "nav_method" %}</a>
+      {% endif %}
     </nav>
   </header>
+  {% if reader %}
+  <div class="reader-bar">
+    <span class="reader-name">{% tr reader "title" %}</span>
+    <span class="reader-note">{% tr reader "use" %}</span>
+    {% if reader.note_en %}<span class="reader-note">{% tr reader "note" %}</span>{% endif %}
+    <form method="post" action="{% url 'role_clear' %}">
+      {% csrf_token %}
+      <button type="submit">{% say "change" %}</button>
+    </form>
+  </div>
+  {% endif %}
   <main>
     {% block content %}{% endblock %}
   </main>

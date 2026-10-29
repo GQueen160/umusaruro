@@ -2,13 +2,13 @@
 
 What was built on `dev`. The classification engine and the published Season A numbers were kept. The product is no longer a maize action sheet. It is a cultivation advisor: farmer, sector, district, and ministry, from before planting to after harvest, with each finding kept under the crop it belongs to.
 
-The farmer still starts on the map. Planners start at `/advisor/`, where the crops the survey prints are grouped (cereals, roots and tubers, banana, legumes, garden and other). Each crop page has the three stages and the district yield table. Irrigation, all-crop seed, and fertilizer stay on `/sheet/`, because those tables are not split by crop. Maize keeps the PSTA 5 comparison and the eight-year series. The other crops are not scored against that milestone.
+The first screen is the map and a choice of who is reading. A mini farm or a large farm opens the field map. Ministry opens `/advisor/`, where the crops the survey prints are grouped (cereals, roots and tubers, banana, legumes, garden and other). A district agricultural officer opens `/sheet/`. A sector agricultural officer opens the field map to name the sector, then that district's sheet. The survey is not published per sector. Each crop page has the three stages and the district yield table. Irrigation, all-crop seed, and fertilizer stay on `/sheet/`, because those tables are not split by crop. Maize keeps the PSTA 5 comparison and the eight-year series. The other crops are not scored against that milestone.
 
 ## What the farmer sees
 
-Open `http://127.0.0.1:8000/`.
+Open `http://127.0.0.1:8000/`. The map is up, and the search, the sheet, and the tools stay hidden until the reader chooses. Mini farm and large farm then open `http://127.0.0.1:8000/field/`.
 
-The page is a full-screen street map (Leaflet 1.9.4 on OpenStreetMap tiles). The farmer can pan, zoom, search, or walk the official hierarchy:
+The field page is a full-screen street map (Leaflet 1.9.4 on OpenStreetMap tiles). The farmer can pan, zoom, search, or walk the official hierarchy:
 
 **akarere → umurenge → akagari → umudugudu**
 
@@ -66,7 +66,10 @@ Every card says the figures are for the district. The Seasonal Agricultural Surv
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| GET | `/` | Farmer map |
+| GET | `/` | Map, then the reader choice. A later visit opens that reader's screen |
+| GET | `/field/` | Farmer map, after a reader is chosen |
+| POST | `/role/` | Store the reader and open their screen |
+| POST | `/role/clear/` | Forget the reader and show the choice again |
 | GET | `/api/boundaries/` | District outlines |
 | GET | `/api/places/` | Next level of the hierarchy |
 | GET | `/api/search/?q=` | Village search |

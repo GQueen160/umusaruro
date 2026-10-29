@@ -1,0 +1,10 @@
+<div class="langs{% if float %} langs-float{% endif %}" role="group" aria-label="{{ ui.lang_name }}">
+  {% for code, label in languages %}
+  <form method="post" action="{% url 'lang' %}">
+    {% csrf_token %}
+    <input type="hidden" name="lang" value="{{ code }}">
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <button type="submit"{% if lang == code %} aria-pressed="true"{% endif %}>{{ label }}</button>
+  </form>
+  {% endfor %}
+</div>

@@ -1,0 +1,13 @@
+{% load stats %}
+<div class="bars" aria-hidden="true">
+  {% for lever in s.levers %}
+  <div class="bar-row">
+    <span class="bar-name">{{ lever.label }}</span>
+    <div class="bar-track">
+      {% if lever.large.value != None %}<span class="bar lsf" style="width: {{ lever.large.value }}%"></span>{% endif %}
+      {% if lever.small.value != None %}<span class="bar ssf" style="width: {{ lever.small.value }}%"></span>{% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+<p class="legend-line"><span class="swatch ssf"></span> Smallholders <span class="swatch lsf"></span> Large farms. Bar length is the percentage of farmers, on a scale of none to all. A missing bar is a blank cell, not zero.</p>

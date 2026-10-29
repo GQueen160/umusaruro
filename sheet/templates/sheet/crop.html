@@ -12,28 +12,36 @@
 {% endif %}
 
 <section>
-  <h2>Who is reading</h2>
+  <h2>{% if reader %}How you read this{% else %}Who is reading{% endif %}</h2>
   <div class="who">
+    {% if not reader or reader.group == "farmer" %}
     <article>
       <p class="eyebrow">Farmer</p>
       <p>On the <a href="{% url 'field' %}">farmer map</a>, choose the village and then {{ crop.rw }}.
         The advice uses this district yield. The survey is not published for the village.</p>
     </article>
+    {% endif %}
+    {% if not reader or reader.id == "sector" %}
     <article>
       <p class="eyebrow">Sector</p>
       <p>There is no sector figure for {{ crop.en }}. Read the district row below for the district the sector sits in.</p>
     </article>
+    {% endif %}
+    {% if not reader or reader.id == "district" %}
     <article>
       <p class="eyebrow">District</p>
       <p>The table is this crop only. Irrigation and fertilizer for the district are on the
         <a href="{% url 'overview' %}">district map</a>, because those tables cover every crop together.</p>
     </article>
+    {% endif %}
+    {% if not reader or reader.id == "ministry" %}
     <article>
       <p class="eyebrow">Ministry</p>
       <p>The national yield is {% stat national %}.
         {% if crop.milestone %}The <span class="ref">PSTA 5</span> milestones apply to maize, and the comparison sits on each district sheet.{% else %}The <span class="ref">PSTA 5</span> yield milestone in this project is for maize. This crop is not scored against it.{% endif %}
       </p>
     </article>
+    {% endif %}
   </div>
 </section>
 
@@ -88,6 +96,16 @@
 
 <section>
   <h2>District yields</h2>
+  <div class="yield-chart">
+    {% for place in places %}
+    <div class="yield-row">
+      <a href="{% url 'district' place.slug %}">{{ place.name }}</a>
+      <div class="bar-track">{% if place.share %}<span class="bar all" style="width: {{ place.share }}%"></span>{% endif %}</div>
+      <span class="yield-num">{% stat place.all_farms compact=True %}</span>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="legend-line">Bar length is this district against the highest printed district for this crop. No bar means the cell is blank, not zero. Large-farm figures stay in the table.</p>
   <div class="table-wrap">
     <table class="districts">
       <caption>{{ crop.en }} yield, kilograms per hectare, <span class="ref">SAS Season A 2026</span>.

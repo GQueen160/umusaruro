@@ -11,13 +11,13 @@ from farm.advice import advise, crops_in
 from farm.places import district_place, norm, sector_place, spoken, villages
 
 
-def hear(text: str) -> dict:
+def hear(text: str, reader: str = "farmer-large") -> dict:
     cleaned = norm(text)
     crops = crops_in(cleaned)
     place, choices = _place(cleaned)
     advice = None
     if place and place.get("district") and crops:
-        advice = advise(place["district"], crops)
+        advice = advise(place["district"], crops, reader=reader)
     return {
         "heard": text.strip(),
         "crops": crops,
@@ -26,6 +26,7 @@ def hear(text: str) -> dict:
         "advice": advice,
         "reply_rw": _reply(place, choices, crops, advice),
         "reply_en": _reply_en(place, choices, crops, advice),
+        "reply_fr": _reply_fr(place, choices, crops, advice),
     }
 
 
@@ -118,6 +119,19 @@ def _reply_en(place, choices, crops, advice) -> str:
         lead = next((card["title_en"] for card in advice["cards"] if card.get("first")), "")
         return f"{lead}. {advice['note_en']}"
     return "No advice could be read from the report."
+
+
+def _reply_fr(place, choices, crops, advice) -> str:
+    if choices:
+        return "Plusieurs villages portent ce nom. Choisissez-en un."
+    if place is None:
+        return "Je n'ai pas entendu de lieu. Touchez la carte, ou dites le village."
+    if not crops:
+        return "Lieu trouvé. Choisissez la culture."
+    if advice and advice.get("cards"):
+        lead = next((card.get("title_fr") for card in advice["cards"] if card.get("first")), "")
+        return f"{lead}. {advice.get('note_fr', '')}"
+    return "Aucun conseil n'a pu être lu dans le rapport."
 
 
 def _where(place: dict) -> str:

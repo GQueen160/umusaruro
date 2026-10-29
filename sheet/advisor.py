@@ -87,6 +87,7 @@ class PlaceYield:
     slug: str
     all_farms: Stat
     large_farms: Stat
+    share: int = 0
 
 
 def _yield(cells, table: str, geography: str, crop: str) -> Stat:
@@ -106,19 +107,26 @@ def _crop_count(value: int) -> Stat:
     return Stat(Decimal(value), "crops", sas_a("13"), checked=False)
 
 
+def _share(value: Decimal | None, peak: Decimal | None) -> int:
+    """0–100 against the highest printed value in the same picture. Not shown as a number."""
+    if value is None or peak is None or peak == 0:
+        return 0
+    return max(1, int((value / peak) * Decimal(100)))
+
+
 @lru_cache(maxsize=1)
 def _built() -> dict[str, dict]:
     cells, _rain, _decisions = data()
     pages = {}
     for crop in CROPS.values():
-        places = []
+        draft = []
         for name in districts():
-            places.append(PlaceYield(
-                name=name,
-                slug=slug(name),
-                all_farms=_yield(cells, "13", name, crop.yield_key),
-                large_farms=_yield(cells, "14", name, crop.yield_key),
-            ))
+            draft.append((name, _yield(cells, "13", name, crop.yield_key), _yield(cells, "14", name, crop.yield_key)))
+        peak = max((all_farms.value for _name, all_farms, _large in draft if all_farms.value is not None), default=None)
+        places = [
+            PlaceYield(name, slug(name), all_farms, large_farms, _share(all_farms.value, peak))
+            for name, all_farms, large_farms in draft
+        ]
         national = _yield(cells, "13", NATIONAL, crop.yield_key)
         large = _yield(cells, "14", NATIONAL, crop.yield_key)
         printed = [place for place in places if place.all_farms.value is not None]
@@ -154,6 +162,10 @@ def home() -> dict:
     pages = _built()
     families = []
     for family in FAMILIES:
+        peak = max(
+            (pages[crop.key]["national"].value for crop in family.crops if pages[crop.key]["national"].value is not None),
+            default=None,
+        )
         families.append({
             "key": family.key,
             "en": family.en,
@@ -165,6 +177,7 @@ def home() -> dict:
                     "rw": crop.rw,
                     "national": pages[crop.key]["national"],
                     "printed": pages[crop.key]["printed"],
+                    "share": _share(pages[crop.key]["national"].value, peak),
                     "milestone": crop.milestone,
                     "trend": crop.trend,
                 }
