@@ -1,52 +1,108 @@
 {% load static %}
+{% load i18n_ui %}
 <!doctype html>
-<html lang="rw">
+<html lang="{{ lang }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Umusaruro</title>
   <meta name="csrf-token" content="{{ csrf_token }}">
+  <link rel="icon" href="{% static 'farm/logo.png' %}" type="image/png">
   <link rel="stylesheet" href="{% static 'farm/vendor/leaflet.css' %}">
-  <link rel="stylesheet" href="{% static 'farm/farm.css' %}">
+  <link rel="stylesheet" href="{% static 'farm/farm.css' %}?v=7">
 </head>
-<body>
-  <div id="map"></div>
+<body{% if reader %} data-reader="{{ reader.id }}"{% endif %} data-lang="{{ lang }}">
+  {% include "farm/lang.html" with float=1 %}
+  <div id="map"{% if gate %} inert{% endif %}></div>
 
-  <form id="search" role="search">
-    <label class="sr" for="q">Shakisha umudugudu</label>
-    <input id="q" name="q" autocomplete="off" placeholder="Shakisha umudugudu">
-    <p class="hint">Search a village</p>
+  {% if gate %}
+  <div class="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+    <form method="post" action="{% url 'role_choose' %}">
+      {% csrf_token %}
+      <p class="gate-kicker"><img class="mark" src="{% static 'farm/logo.png' %}" alt="">Umusaruro</p>
+      <h1 id="gate-title">{% say "who_title" %}</h1>
+      <p class="gate-lead">{% say "who_lead" %}</p>
+      <fieldset>
+        <legend>{% say "farmer" %}</legend>
+        <div class="gate-choices two">
+          {% for person in farmers %}
+          <button type="submit" name="role" value="{{ person.id }}"{% if forloop.first %} autofocus{% endif %}>
+            <strong>{% tr person "title" %}</strong>
+            <span>{% tr person "use" %}</span>
+          </button>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>{% say "planner" %}</legend>
+        <div class="gate-choices">
+          {% for person in planners %}
+          <button type="submit" name="role" value="{{ person.id }}">
+            <strong>{% tr person "title" %}</strong>
+            <span>{% tr person "use" %}</span>
+          </button>
+          {% endfor %}
+        </div>
+      </fieldset>
+    </form>
+  </div>
+  {% endif %}
+
+  <form id="search" role="search"{% if gate %} hidden{% endif %}>
+    <label class="sr" for="q">{% say "search" %}</label>
+    <input id="q" name="q" autocomplete="off" placeholder="{% say "search" %}">
     <div id="results" hidden></div>
   </form>
 
-  <div class="map-tools">
-    <button type="button" id="where" class="tool">Aho ndi</button>
-    <button type="button" id="voice" class="tool voice">Vuga</button>
+  <div class="map-tools"{% if gate %} hidden{% endif %}>
+    <button type="button" id="where" class="tool">{% say "where" %}</button>
+    <button type="button" id="voice" class="tool voice">{% say "voice" %}</button>
   </div>
 
-  <section id="sheet" aria-live="polite">
-    <p class="brand">Umusaruro <span>Inama ku murima wawe</span></p>
-    <p id="prompt">Kanda ku karita aho uzahinga.<br><span>Tap the map where you will plant.</span></p>
+  <section id="sheet" aria-live="polite"{% if gate %} hidden{% endif %}>
+    {% if reader %}
+    <form class="who-now" method="post" action="{% url 'role_clear' %}">
+      {% csrf_token %}
+      <p>{% tr reader "title" %}</p>
+      <button type="submit">{% say "change" %} <span>{% say "change_long" %}</span></button>
+    </form>
+    {% endif %}
+    <p class="brand"><img class="mark" src="{% static 'farm/logo.png' %}" alt=""><span class="brand-copy">Umusaruro <span>{% if reader.id == "sector" %}{% say "brand_sector" %}{% else %}{% say "brand_farmer" %}{% endif %}</span></span></p>
+    {% if reader.id == "sector" %}
+    <p id="prompt">{% say "prompt_sector" %}</p>
+    {% else %}
+    <p id="prompt">{% say "prompt_farmer" %} {% if reader %}{% tr reader "use" %}{% endif %}</p>
+    {% endif %}
     <div id="talk"></div>
     <p id="place" hidden></p>
+    <div id="flag" class="flag">
+      <div class="flag-key" role="group" aria-label="{% say "flag_name" %}">
+        <span class="flag-item" data-flag="plant"><i></i>{% say "flag_plant" %}</span>
+        <span class="flag-item" data-flag="check"><i></i>{% say "flag_check" %}</span>
+        <span class="flag-item" data-flag="stop"><i></i>{% say "flag_stop" %}</span>
+      </div>
+      <p id="flag-line">{% say "flag_wait" %}</p>
+    </div>
 
-    <details id="ladder">
-      <summary>Hindura ahantu <span>District, sector, cell, village</span></summary>
-      <label>Akarere <select id="pick-district"></select></label>
-      <label>Umurenge <select id="pick-sector" disabled></select></label>
-      <label>Akagari <select id="pick-cell" disabled></select></label>
-      <label>Umudugudu <select id="pick-village" disabled></select></label>
+    <details id="ladder"{% if reader.id == "sector" %} open{% endif %}>
+      <summary>{% say "ladder" %} <span>{% say "ladder_hint" %}</span></summary>
+      <label>{% say "pick_district" %} <select id="pick-district"></select></label>
+      <label>{% say "pick_sector" %} <select id="pick-sector" disabled></select></label>
+      <label>{% say "pick_cell" %} <select id="pick-cell" disabled></select></label>
+      <label>{% say "pick_village" %} <select id="pick-village" disabled></select></label>
     </details>
 
     <div id="crops"></div>
     <div id="advice"></div>
+    {% if reader.group == "farmer" %}
     <form id="target" hidden></form>
     <div id="plans"></div>
-    <p class="quiet"><a href="{% url 'overview' %}">Urutonde rw'uturere</a> · numbers for planners</p>
+    {% endif %}
   </section>
 
   {{ crops|json_script:"crop-data" }}
+  {{ ui|json_script:"ui-copy" }}
   <script src="{% static 'farm/vendor/leaflet.js' %}"></script>
-  <script src="{% static 'farm/farm.js' %}"></script>
+  <script src="{% static 'farm/farm.js' %}?v=8"></script>
 </body>
 </html>

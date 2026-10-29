@@ -1,6 +1,7 @@
 from django.http import Http404
 from django.shortcuts import render
 
+from sheet import advisor as advisor_data
 from sheet import sheet
 from sheet.mapsvg import outline
 
@@ -31,3 +32,14 @@ def district_panel(request, slug):
 
 def method(request):
     return render(request, "sheet/method.html", sheet.method())
+
+
+def advisor(request):
+    return render(request, "sheet/advisor.html", advisor_data.home())
+
+
+def crop(request, key):
+    page = advisor_data.crop_page(key)
+    if page is None:
+        raise Http404("No such crop")
+    return render(request, "sheet/crop.html", page)
