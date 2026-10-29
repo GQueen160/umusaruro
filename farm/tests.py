@@ -29,6 +29,11 @@ class PlaceTests(TestCase):
 
 
 class AdviceTests(TestCase):
+    def test_the_color_follows_the_printed_harvest(self):
+        self.assertEqual(advise("Nyarugenge", ["maize"])["flag"], "plant")
+        self.assertEqual(advise("Nyagatare", ["maize"])["flag"], "check")
+        self.assertEqual(advise("Nyarugenge", ["sorghum"])["flag"], "stop")
+
     def test_a_mini_farm_aims_at_the_district_harvest(self):
         advice = advise("Nyagatare", ["maize"], reader="farmer-mini")
         self.assertEqual(advice["target"]["kg"], "2887")

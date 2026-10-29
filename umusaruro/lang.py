@@ -95,6 +95,30 @@ COPY = {
     "overview_h1": {"en": "The field, beside the reading.", "fr": "Le terrain, à côté de la lecture.", "rw": "Umurima, hafi y'isosomo."},
     "tag": {"en": "Cultivation advisor", "fr": "Conseil de culture", "rw": "Umujyanama w'ubuhinzi"},
     "lang_name": {"en": "Language", "fr": "Langue", "rw": "Ururimi"},
+    "flag_name": {"en": "What to do", "fr": "Quoi faire", "rw": "Icyo gukora"},
+    "flag_plant": {"en": "Plant", "fr": "Cultiver", "rw": "Hinga"},
+    "flag_check": {"en": "Check", "fr": "Vérifier", "rw": "Reba"},
+    "flag_stop": {"en": "Stop", "fr": "Arrêt", "rw": "Hagarara"},
+    "flag_wait": {
+        "en": "Choose a crop. The color will say what to do.",
+        "fr": "Choisissez une culture. La couleur dira quoi faire.",
+        "rw": "Hitamo igihingwa. Ibara rizakubwira icyo gukora.",
+    },
+    "flag_plant_line": {
+        "en": "The survey printed a harvest for this crop in this district. You can set an aim.",
+        "fr": "L'enquête a imprimé une récolte pour cette culture dans ce district. Vous pouvez fixer un objectif.",
+        "rw": "Raporo yanditse umusaruro w'iki gihingwa muri aka karere. Ushobora gushyiraho intego.",
+    },
+    "flag_check_line": {
+        "en": "Read the card. Water, seed, or fertilizer needs a look in this district.",
+        "fr": "Lisez la carte. L'eau, la semence ou l'engrais demande un regard dans ce district.",
+        "rw": "Soma ikarita. Amazi, imbuto, cyangwa ifumbire bisaba kureba muri aka karere.",
+    },
+    "flag_stop_line": {
+        "en": "This crop was not printed for this district. A blank is not zero.",
+        "fr": "Cette culture n'a pas été imprimée pour ce district. Une case vide n'est pas zéro.",
+        "rw": "Iki gihingwa ntikanditswe muri aka karere. Ahatagira umubare si zeru.",
+    },
 }
 
 

@@ -341,9 +341,18 @@ def advise(district: str, crops: list[str], reader: str = "farmer-large") -> dic
             }
             break
 
+    missing = any(_yields(district, crop)["all"] is None for crop in known)
+    if missing:
+        flag = "stop"
+    elif decision.action or decision.fertilizer_named or decision.unresolved:
+        flag = "check"
+    else:
+        flag = "plant"
+
     return {
         "district": district,
         "action": decision.action,
+        "flag": flag,
         "crops": known,
         "stronger": stronger,
         "cards": cards,

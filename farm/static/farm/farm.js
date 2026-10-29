@@ -101,6 +101,17 @@
     });
   }
 
+  function paintFlag(kind) {
+    document.querySelectorAll(".flag-item").forEach(function (item) {
+      if (item.dataset.flag === kind) item.setAttribute("aria-current", "true");
+      else item.removeAttribute("aria-current");
+    });
+    const line = document.getElementById("flag-line");
+    if (!line) return;
+    const key = kind ? "flag_" + kind + "_line" : "flag_wait";
+    line.textContent = ui[key] || "";
+  }
+
   function renderAdvice(advice) {
     els.advice.textContent = "";
     const note = document.createElement("p");
@@ -141,6 +152,7 @@
       els.advice.appendChild(box);
     });
     renderTarget(advice.target);
+    paintFlag(advice.flag);
   }
 
   function renderTarget(target) {
@@ -219,6 +231,15 @@
         if (index >= 0) state.crops.splice(index, 1);
         else if (state.crops.length < 4) state.crops.push(crop.id);
         paintCrops();
+        if (!state.crops.length) {
+          els.advice.textContent = "";
+          if (els.target) {
+            els.target.hidden = true;
+            els.target.textContent = "";
+          }
+          paintFlag(null);
+          return;
+        }
         loadAdvice();
       });
       els.crops.appendChild(button);

@@ -9,7 +9,7 @@
   <meta name="csrf-token" content="{{ csrf_token }}">
   <link rel="icon" href="{% static 'farm/logo.png' %}" type="image/png">
   <link rel="stylesheet" href="{% static 'farm/vendor/leaflet.css' %}">
-  <link rel="stylesheet" href="{% static 'farm/farm.css' %}?v=6">
+  <link rel="stylesheet" href="{% static 'farm/farm.css' %}?v=7">
 </head>
 <body{% if reader %} data-reader="{{ reader.id }}"{% endif %} data-lang="{{ lang }}">
   {% include "farm/lang.html" with float=1 %}
@@ -75,6 +75,14 @@
     {% endif %}
     <div id="talk"></div>
     <p id="place" hidden></p>
+    <div id="flag" class="flag">
+      <div class="flag-key" role="group" aria-label="{% say "flag_name" %}">
+        <span class="flag-item" data-flag="plant"><i></i>{% say "flag_plant" %}</span>
+        <span class="flag-item" data-flag="check"><i></i>{% say "flag_check" %}</span>
+        <span class="flag-item" data-flag="stop"><i></i>{% say "flag_stop" %}</span>
+      </div>
+      <p id="flag-line">{% say "flag_wait" %}</p>
+    </div>
 
     <details id="ladder"{% if reader.id == "sector" %} open{% endif %}>
       <summary>{% say "ladder" %} <span>{% say "ladder_hint" %}</span></summary>
@@ -95,6 +103,6 @@
   {{ crops|json_script:"crop-data" }}
   {{ ui|json_script:"ui-copy" }}
   <script src="{% static 'farm/vendor/leaflet.js' %}"></script>
-  <script src="{% static 'farm/farm.js' %}?v=7"></script>
+  <script src="{% static 'farm/farm.js' %}?v=8"></script>
 </body>
 </html>

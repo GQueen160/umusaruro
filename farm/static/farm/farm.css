@@ -105,6 +105,36 @@ body.searching #sheet { visibility: hidden; }
 #place { margin: 0 0 12px; font-size: 1.2rem; font-weight: 800; line-height: 1.3; }
 #place small { display: block; font-weight: 500; color: #a9bfb0; }
 
+.flag { margin: 0 0 12px; }
+.flag-key { display: flex; gap: 6px; }
+.flag-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.16);
+  color: #a9bfb0;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+.flag-item i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+.flag-item[data-flag="plant"] i { background: #3caf55; }
+.flag-item[data-flag="check"] i { background: #f0a202; }
+.flag-item[data-flag="stop"] i { background: #e15b4a; }
+.flag-item[aria-current="true"] { color: #10281c; }
+.flag-item[data-flag="plant"][aria-current="true"] { background: #3caf55; border-color: #3caf55; }
+.flag-item[data-flag="check"][aria-current="true"] { background: #f0a202; border-color: #f0a202; }
+.flag-item[data-flag="stop"][aria-current="true"] { background: #e15b4a; border-color: #e15b4a; color: #fff; }
+#flag-line { margin: 8px 0 0; font-size: 0.95rem; line-height: 1.35; }
+
 #talk { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
 .bubble { margin: 0; padding: 10px 12px; border-radius: 14px; line-height: 1.35; }
 .bubble.you { background: rgba(198, 245, 74, 0.16); }
