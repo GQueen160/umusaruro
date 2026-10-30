@@ -296,6 +296,84 @@
     return size;
   }
 
+  function numericText(value) {
+    const text = String(value || "");
+    let out = "";
+    let sep = false;
+    let dropped = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (ch >= "0" && ch <= "9") out += ch;
+      else if ((ch === "." || ch === ",") && !sep) {
+        sep = true;
+        out += ch;
+      } else dropped = true;
+    }
+    return { text: out, dropped: dropped };
+  }
+
+  function bindNumber(input, note, apply) {
+    let held = false;
+    function show(on) {
+      input.classList.toggle("digits", on);
+      note.hidden = !on;
+      note.textContent = on ? ui.digits_only : "";
+      if (on) input.setAttribute("aria-invalid", "true");
+      else if (!input.classList.contains("bad")) input.removeAttribute("aria-invalid");
+    }
+    function write(value, caret) {
+      if (input.value !== value) {
+        input.value = value;
+        if (caret != null && input.setSelectionRange) {
+          const at = Math.max(0, Math.min(caret, value.length));
+          input.setSelectionRange(at, at);
+        }
+      }
+      apply(value);
+    }
+    input.autocomplete = "off";
+    input.spellcheck = false;
+    input.addEventListener("beforeinput", function (event) {
+      const kind = event.inputType || "";
+      if (kind.indexOf("insert") !== 0 || event.data == null) return;
+      const start = input.selectionStart == null ? input.value.length : input.selectionStart;
+      const end = input.selectionEnd == null ? start : input.selectionEnd;
+      const raw = input.value.slice(0, start) + event.data + input.value.slice(end);
+      const next = numericText(raw);
+      if (!next.dropped) {
+        held = false;
+        return;
+      }
+      event.preventDefault();
+      held = true;
+      write(next.text, start + numericText(event.data).text.length);
+      show(true);
+    });
+    input.addEventListener("input", function () {
+      const next = numericText(input.value);
+      if (next.dropped) {
+        held = false;
+        write(next.text, input.selectionStart);
+        show(true);
+        return;
+      }
+      if (held) {
+        held = false;
+        apply(input.value);
+        return;
+      }
+      show(false);
+      apply(input.value);
+    });
+  }
+
+  function digitsNote() {
+    const note = document.createElement("p");
+    note.className = "digits-note";
+    note.hidden = true;
+    return note;
+  }
+
   function trimNum(value) {
     const n = Math.round(Number(value) * 10000) / 10000;
     return String(n);
@@ -575,13 +653,15 @@
     const size = document.createElement("input");
     size.inputMode = "decimal";
     size.value = state.holding.farm;
-    size.addEventListener("input", function () {
-      state.holding.farm = size.value;
+    const sizeNote = digitsNote();
+    bindNumber(size, sizeNote, function (value) {
+      state.holding.farm = value;
       paintCountry();
     });
     sizeLabel.className = "ask";
     sizeLabel.appendChild(fieldRow(size, unitSwitch()));
     card.appendChild(sizeLabel);
+    card.appendChild(sizeNote);
     const room = document.createElement("p");
     room.className = "measure";
     room.hidden = true;
@@ -598,8 +678,9 @@
       portion.inputMode = "decimal";
       portion.value = row.area;
       portion.dataset.area = id;
-      portion.addEventListener("input", function () {
-        row.area = portion.value;
+      const portionNote = digitsNote();
+      bindNumber(portion, portionNote, function (value) {
+        row.area = value;
         paintCountry();
       });
       portionLabel.appendChild(fieldRow(portion, unitWordSpan()));
@@ -608,6 +689,7 @@
       flag.dataset.flag = id;
       flag.hidden = true;
       card.appendChild(portionLabel);
+      card.appendChild(portionNote);
       card.appendChild(flag);
       const targetLabel = document.createElement("label");
       targetLabel.className = "ask";
@@ -616,12 +698,14 @@
       const target = document.createElement("input");
       target.inputMode = "decimal";
       target.value = row.target;
-      target.addEventListener("input", function () {
-        row.target = target.value;
+      const targetNote = digitsNote();
+      bindNumber(target, targetNote, function (value) {
+        row.target = value;
         paintCountry();
       });
       targetLabel.appendChild(target);
       card.appendChild(targetLabel);
+      card.appendChild(targetNote);
       const country = document.createElement("p");
       country.className = "country";
       country.dataset.crop = id;
@@ -681,7 +765,7 @@
       card.querySelectorAll("input[data-area]").forEach(function (input) {
         const bad = over && amount(input.value) > 0;
         input.classList.toggle("bad", bad);
-        if (bad) input.setAttribute("aria-invalid", "true");
+        if (bad || input.classList.contains("digits")) input.setAttribute("aria-invalid", "true");
         else input.removeAttribute("aria-invalid");
       });
       paintFocus();
@@ -870,8 +954,16 @@
     const up = document.createElement("button");
     up.type = "button";
     up.textContent = "+";
-    down.addEventListener("click", function () { input.value = String(Math.max(100, Number(input.value) - 100)); });
-    up.addEventListener("click", function () { input.value = String(Number(input.value) + 100); });
+    const kgNote = digitsNote();
+    bindNumber(input, kgNote, function () {});
+    down.addEventListener("click", function () {
+      input.value = String(Math.max(100, Number(input.value) - 100));
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    up.addEventListener("click", function () {
+      input.value = String(Number(input.value) + 100);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
     const save = document.createElement("button");
     save.id = "save";
     save.type = "submit";
@@ -882,6 +974,7 @@
     els.target.appendChild(title);
     els.target.appendChild(why);
     els.target.appendChild(row);
+    els.target.appendChild(kgNote);
     els.target.appendChild(save);
     els.target.onsubmit = function (event) {
       event.preventDefault();

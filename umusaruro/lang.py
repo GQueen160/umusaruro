@@ -230,6 +230,11 @@ COPY = {
         "fr": "Quel est votre objectif sur cette terre, en kg ?",
         "rw": "Intego yawe kuri ubwo butaka ni kg zingahe?",
     },
+    "digits_only": {
+        "en": "That is not a number.",
+        "fr": "Ce n'est pas un nombre.",
+        "rw": "Ibyo si umubare.",
+    },
     "country_goal": {"en": "Country goal on the farm", "fr": "Objectif du pays sur la ferme", "rw": "Intego y'igihugu ku murima"},
     "country_harvest": {"en": "Country harvest on the farm", "fr": "Récolte du pays sur la ferme", "rw": "Umusaruro w'igihugu ku murima"},
     "per_ha": {"en": "kg/ha", "fr": "kg/ha", "rw": "kg/ha"},
