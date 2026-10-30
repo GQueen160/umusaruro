@@ -1,17 +1,20 @@
 """Django settings for Umusaruro.
 
 The engine keeps datasets, their tables, and every observation read from
-them in a database (SQLite by default). Uploaded files are kept under
-var/, which git ignores. Configuration comes from the environment:
+them in a database. Local work uses SQLite under var/. A DATABASE_URL,
+such as the one Railway gives a Postgres service, is used instead when
+it is set. Uploaded files stay under var/, which git ignores.
 
     DJANGO_SECRET_KEY     required unless DJANGO_DEBUG=1
     DJANGO_DEBUG          "1" for local development
     DJANGO_ALLOWED_HOSTS  comma-separated host names
-    UMUSARURO_VAR         where the database and uploads live (default var/)
+    DATABASE_URL          Postgres URL from a separate database service
+    UMUSARURO_VAR         where the local database and uploads live
 """
 
 import os
 from pathlib import Path
+from urllib.parse import unquote, urlparse
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -23,7 +26,11 @@ if not SECRET_KEY:
     SECRET_KEY = "local-development-only"
 
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()]
-CSRF_TRUSTED_ORIGINS = [f"https://{h}" for h in ALLOWED_HOSTS if h not in ("localhost", "127.0.0.1")]
+for _railway_name in ("RAILWAY_PUBLIC_DOMAIN", "RAILWAY_PRIVATE_DOMAIN"):
+    _railway_host = os.environ.get(_railway_name, "").strip()
+    if _railway_host and _railway_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(_railway_host)
+CSRF_TRUSTED_ORIGINS = [f"https://{h}" for h in ALLOWED_HOSTS if h not in ("localhost", "127.0.0.1") and "." in h]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -70,7 +77,29 @@ TEMPLATES = [
 VAR_DIR = Path(os.environ.get("UMUSARURO_VAR", BASE_DIR / "var"))
 UPLOAD_DIR = VAR_DIR / "uploads"
 VAR_DIR.mkdir(parents=True, exist_ok=True)
-DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": VAR_DIR / "umusaruro.sqlite3"}}
+
+
+def _database() -> dict:
+    url = os.environ.get("DATABASE_URL", "").strip()
+    if not url:
+        return {"ENGINE": "django.db.backends.sqlite3", "NAME": VAR_DIR / "umusaruro.sqlite3"}
+    parsed = urlparse(url)
+    options = {}
+    if parsed.hostname and parsed.hostname not in ("localhost", "127.0.0.1"):
+        options["sslmode"] = "require"
+    return {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": unquote(parsed.path.lstrip("/")),
+        "USER": unquote(parsed.username or ""),
+        "PASSWORD": unquote(parsed.password or ""),
+        "HOST": parsed.hostname or "",
+        "PORT": parsed.port or 5432,
+        "CONN_MAX_AGE": 60,
+        "OPTIONS": options,
+    }
+
+
+DATABASES = {"default": _database()}
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 UPLOAD_MAX_BYTES = 25 * 1024 * 1024
 DATA_UPLOAD_MAX_MEMORY_SIZE = 2_621_440

@@ -34,4 +34,6 @@ export DJANGO_DEBUG=1
 
 Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/). The first screen asks who is reading.
 
+On Railway this is two services. Add a Postgres database, and connect its `DATABASE_URL` to the web service. The web service is Django: the pages, the map, and the advice. There is no third frontend service, because those pages are drawn by Django. The start command is in `railway.toml` and uses Gunicorn, not the development server.
+
 Video demo: [YouTube channel](https://www.youtube.com/@umusarurotv1228).
