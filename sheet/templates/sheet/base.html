@@ -6,9 +6,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Umusaruro{% endblock %}</title>
+  <meta name="csrf-token" content="{{ csrf_token }}">
   <meta name="description" content="Agricultural advisor for Rwanda's crops, from published NISR survey tables. Before planting, in the field, and after harvest.">
   <link rel="icon" href="{% static 'farm/logo.png' %}" type="image/png">
   <link rel="stylesheet" href="{% static 'sheet/style.css' %}?v=4">
+  <link rel="stylesheet" href="{% static 'farm/chat.css' %}?v=6">
   <script src="{% static 'sheet/map.js' %}" defer></script>
 </head>
 <body>
@@ -60,5 +62,7 @@
       Built with model assistance; see the <a href="{% url 'method' %}">method page</a>.
       Entry in the agriculture track of the <a href="https://statistics.gov.rw/about/hackathon/2026-hackathon-competition">NISR <span class="ref">2026</span> Big Data Hackathon</a>.</p>
   </footer>
+  {% include "farm/chat.html" %}
+  <script src="{% static 'farm/chat.js' %}?v=1"></script>
 </body>
 </html>

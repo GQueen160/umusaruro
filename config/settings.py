@@ -10,6 +10,11 @@ it is set. Uploaded files stay under var/, which git ignores.
     DJANGO_ALLOWED_HOSTS  comma-separated host names
     DATABASE_URL          Postgres URL from a separate database service
     UMUSARURO_VAR         where the local database and uploads live
+    NVIDIA_API_KEY        key from build.nvidia.com for the field chat
+    NVIDIA_MODEL          optional open model, default nvidia/nemotron-3.5-bolt-e4b
+
+A gitignored .env file in the project root is loaded for local work.
+A variable already set in the environment is left as it is.
 """
 
 import os
@@ -17,6 +22,27 @@ from pathlib import Path
 from urllib.parse import unquote, urlparse
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def _load_dotenv(path: Path) -> None:
+    if not path.is_file():
+        return
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        name, value = line.split("=", 1)
+        name = name.strip()
+        if name.startswith("export "):
+            name = name[len("export "):].strip()
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+            value = value[1:-1]
+        if name and name not in os.environ:
+            os.environ[name] = value
+
+
+_load_dotenv(BASE_DIR / ".env")
 
 DEBUG = os.environ.get("DJANGO_DEBUG") == "1"
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")

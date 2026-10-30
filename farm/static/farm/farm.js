@@ -15,6 +15,18 @@
     calendarPlan: null,
     calendarDay: null,
   };
+  window.umusaruroContext = function () {
+    const place = state.place;
+    return {
+      place: place ? {
+        district: place.district || "",
+        sector: place.sector || "",
+        cell: place.cell || "",
+        village: place.village || "",
+      } : null,
+      crops: state.crops.slice(),
+    };
+  };
   const pin = L.divIcon({ className: "", html: '<div class="pin"></div>', iconSize: [22, 22] });
   let marker = null;
   let outlines = null;
@@ -296,6 +308,151 @@
     return size;
   }
 
+  function numericText(value) {
+    const text = String(value || "");
+    let out = "";
+    let sep = false;
+    let dropped = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (ch >= "0" && ch <= "9") out += ch;
+      else if ((ch === "." || ch === ",") && !sep) {
+        sep = true;
+        out += ch;
+      } else dropped = true;
+    }
+    return { text: out, dropped: dropped };
+  }
+
+  function bindNumber(input, note, apply, overMessage) {
+    let held = false;
+    let silent = false;
+    let keepFlag = false;
+    let lastGood = "";
+    function show(kind, message) {
+      const on = kind === "digits" || kind === "over";
+      input.classList.toggle("digits", on);
+      if (on) input.dataset.block = kind;
+      else delete input.dataset.block;
+      note.hidden = !on;
+      note.textContent = on ? message : "";
+      if (on) input.setAttribute("aria-invalid", "true");
+      else if (!input.classList.contains("bad")) input.removeAttribute("aria-invalid");
+    }
+    function write(value, caret) {
+      if (input.value !== value) {
+        silent = true;
+        input.value = value;
+        if (caret != null && input.setSelectionRange) {
+          const at = Math.max(0, Math.min(caret, value.length));
+          input.setSelectionRange(at, at);
+        }
+        silent = false;
+      }
+      lastGood = value;
+      apply(value);
+    }
+    function revert(message) {
+      show("over", message);
+      keepFlag = true;
+      if (input.value !== lastGood) {
+        silent = true;
+        input.value = lastGood;
+        silent = false;
+      }
+      apply(lastGood);
+      keepFlag = false;
+    }
+    function overText(text) {
+      return overMessage ? overMessage(text) || "" : "";
+    }
+    input._pull = function (message) {
+      if (!message || input.dataset.pulling) return;
+      input.dataset.pulling = "1";
+      lastGood = "";
+      silent = true;
+      input.value = "";
+      silent = false;
+      show("over", message);
+      keepFlag = true;
+      apply("");
+      keepFlag = false;
+      delete input.dataset.pulling;
+    };
+    input._release = function () {
+      if (keepFlag || input.dataset.block !== "over") return;
+      if (overText(input.value)) return;
+      show("", "");
+    };
+    input.autocomplete = "off";
+    input.spellcheck = false;
+    const opening = numericText(input.value);
+    const openingOver = overText(opening.text);
+    if (openingOver) input.value = "";
+    else if (opening.dropped) input.value = opening.text;
+    lastGood = input.value;
+    input.addEventListener("beforeinput", function (event) {
+      const kind = event.inputType || "";
+      if (kind.indexOf("insert") !== 0 || event.data == null) return;
+      const start = input.selectionStart == null ? input.value.length : input.selectionStart;
+      const end = input.selectionEnd == null ? start : input.selectionEnd;
+      const raw = input.value.slice(0, start) + event.data + input.value.slice(end);
+      const next = numericText(raw);
+      const blocked = overText(next.text);
+      if (blocked) {
+        event.preventDefault();
+        held = true;
+        show("over", blocked);
+        return;
+      }
+      if (!next.dropped) {
+        held = false;
+        return;
+      }
+      event.preventDefault();
+      held = true;
+      write(next.text, start + numericText(event.data).text.length);
+      show("digits", ui.digits_only);
+    });
+    input.addEventListener("input", function (event) {
+      if (silent) return;
+      const next = numericText(input.value);
+      const blocked = overText(next.text);
+      if (blocked) {
+        held = false;
+        revert(blocked);
+        return;
+      }
+      if (next.dropped) {
+        held = false;
+        write(next.text, input.selectionStart);
+        show("digits", ui.digits_only);
+        return;
+      }
+      if (held) {
+        held = false;
+        if ((event.inputType || "").indexOf("delete") === 0) {
+          show("", "");
+          lastGood = input.value;
+        }
+        apply(input.value);
+        return;
+      }
+      show("", "");
+      lastGood = input.value;
+      apply(input.value);
+    });
+    if (openingOver) show("over", openingOver);
+    else if (opening.dropped) show("digits", ui.digits_only);
+  }
+
+  function digitsNote() {
+    const note = document.createElement("p");
+    note.className = "digits-note";
+    note.hidden = true;
+    return note;
+  }
+
   function trimNum(value) {
     const n = Math.round(Number(value) * 10000) / 10000;
     return String(n);
@@ -378,6 +535,49 @@
     if (!n) return value;
     const ha = from === "m2" ? n / 10000 : n;
     return trimNum(to === "m2" ? ha * 10000 : ha);
+  }
+
+  function maxOnLand(id) {
+    const rate = rateFor(id);
+    const row = state.holding.portions[id] || {};
+    if (!rate || !rate.kg_ha || portionsOverFarm()) return "";
+    return portionKg(rate.kg_ha, row.area, state.holding.unit);
+  }
+
+  function goalExceeds(id) {
+    const row = state.holding.portions[id] || {};
+    const wish = amount(row.target);
+    const max = Number(maxOnLand(id));
+    return wish > 0 && max > 0 && wish > max + 1e-9;
+  }
+
+  function goalOver(id, text) {
+    const wish = amount(text);
+    if (!wish) return "";
+    const max = Number(maxOnLand(id));
+    if (!(max > 0) || wish <= max + 1e-9) return "";
+    return ui.exceed_max + " " + fill(ui.over_max, { max: group(String(Math.round(max))) });
+  }
+
+  function areaOver(id, text) {
+    const next = amount(text);
+    if (!next) return "";
+    const farm = amount(state.holding.farm);
+    if (!farm) return "";
+    let used = 0;
+    state.crops.forEach(function (other) {
+      used += other === id ? next : amount((state.holding.portions[other] || {}).area);
+    });
+    if (used <= farm + 1e-9) return "";
+    return ui.exceed_farm + " " + fill(ui.farm_cap, { farm: trimNum(farm), unit: unitWord() });
+  }
+
+  function blameGoal() {
+    let found = "";
+    state.crops.forEach(function (id) {
+      if (!found && goalExceeds(id)) found = id;
+    });
+    return found;
   }
 
   function blameId() {
@@ -575,13 +775,15 @@
     const size = document.createElement("input");
     size.inputMode = "decimal";
     size.value = state.holding.farm;
-    size.addEventListener("input", function () {
-      state.holding.farm = size.value;
+    const sizeNote = digitsNote();
+    bindNumber(size, sizeNote, function (value) {
+      state.holding.farm = value;
       paintCountry();
     });
     sizeLabel.className = "ask";
     sizeLabel.appendChild(fieldRow(size, unitSwitch()));
     card.appendChild(sizeLabel);
+    card.appendChild(sizeNote);
     const room = document.createElement("p");
     room.className = "measure";
     room.hidden = true;
@@ -598,16 +800,21 @@
       portion.inputMode = "decimal";
       portion.value = row.area;
       portion.dataset.area = id;
-      portion.addEventListener("input", function () {
-        row.area = portion.value;
+      const portionNote = digitsNote();
+      bindNumber(portion, portionNote, function (value) {
+        row.area = value;
         paintCountry();
+      }, function (text) {
+        return areaOver(id, text);
       });
+      row.area = portion.value;
       portionLabel.appendChild(fieldRow(portion, unitWordSpan()));
       const flag = document.createElement("p");
       flag.className = "measure over";
       flag.dataset.flag = id;
       flag.hidden = true;
       card.appendChild(portionLabel);
+      card.appendChild(portionNote);
       card.appendChild(flag);
       const targetLabel = document.createElement("label");
       targetLabel.className = "ask";
@@ -615,13 +822,19 @@
       targetLabel.textContent = ui.your_target;
       const target = document.createElement("input");
       target.inputMode = "decimal";
+      target.dataset.goal = id;
       target.value = row.target;
-      target.addEventListener("input", function () {
-        row.target = target.value;
+      const targetNote = digitsNote();
+      bindNumber(target, targetNote, function (value) {
+        row.target = value;
         paintCountry();
+      }, function (text) {
+        return goalOver(id, text);
       });
+      row.target = target.value;
       targetLabel.appendChild(target);
       card.appendChild(targetLabel);
+      card.appendChild(targetNote);
       const country = document.createElement("p");
       country.className = "country";
       country.dataset.crop = id;
@@ -659,6 +872,10 @@
         } else if (!areaReady) {
           scaleState = "now";
           open = true;
+        } else if (goalExceeds(id)) {
+          scaleState = "answered";
+          goalState = "now";
+          open = true;
         } else if (!goalReady) {
           scaleState = "answered";
           goalState = "now";
@@ -675,13 +892,39 @@
         else goal.removeAttribute("aria-current");
       });
     }
+    function pullBack() {
+      let guard = 0;
+      while (portionsOverFarm() && guard < 8) {
+        guard += 1;
+        const id = blameId();
+        const input = id && card.querySelector('input[data-area="' + id + '"]');
+        if (!input || !input._pull) break;
+        input._pull(areaOver(id, input.value));
+      }
+      card.querySelectorAll("input[data-area]").forEach(function (input) {
+        if (input._release && !areaOver(input.dataset.area, input.value)) input._release();
+      });
+      card.querySelectorAll("input[data-goal]").forEach(function (input) {
+        if (!input._pull) return;
+        const message = goalOver(input.dataset.goal, input.value);
+        if (message) input._pull(message);
+        else if (input._release) input._release();
+      });
+    }
     function paintCountry() {
+      pullBack();
       const over = portionsOverFarm();
       const blame = blameId();
       card.querySelectorAll("input[data-area]").forEach(function (input) {
         const bad = over && amount(input.value) > 0;
         input.classList.toggle("bad", bad);
-        if (bad) input.setAttribute("aria-invalid", "true");
+        if (bad || input.classList.contains("digits")) input.setAttribute("aria-invalid", "true");
+        else input.removeAttribute("aria-invalid");
+      });
+      card.querySelectorAll("input[data-goal]").forEach(function (input) {
+        const bad = goalExceeds(input.dataset.goal);
+        input.classList.toggle("bad", bad);
+        if (bad || input.classList.contains("digits")) input.setAttribute("aria-invalid", "true");
         else input.removeAttribute("aria-invalid");
       });
       paintFocus();
@@ -694,7 +937,7 @@
         node.hidden = !show;
         node.textContent = text;
       });
-      card.querySelectorAll("[data-flag]").forEach(function (node) {
+      card.querySelectorAll("p[data-flag]").forEach(function (node) {
         const show = over && node.dataset.flag === blame;
         node.hidden = !show;
         node.textContent = show ? measureText() : "";
@@ -709,7 +952,7 @@
     done.className = "done";
     done.textContent = ui.popup_done;
     done.addEventListener("click", function () {
-      if (portionsOverFarm()) {
+      if (card.querySelector('[data-block="over"]') || portionsOverFarm() || blameGoal()) {
         paintCountry();
         return;
       }
@@ -870,8 +1113,16 @@
     const up = document.createElement("button");
     up.type = "button";
     up.textContent = "+";
-    down.addEventListener("click", function () { input.value = String(Math.max(100, Number(input.value) - 100)); });
-    up.addEventListener("click", function () { input.value = String(Number(input.value) + 100); });
+    const kgNote = digitsNote();
+    bindNumber(input, kgNote, function () {});
+    down.addEventListener("click", function () {
+      input.value = String(Math.max(100, Number(input.value) - 100));
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    up.addEventListener("click", function () {
+      input.value = String(Number(input.value) + 100);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
     const save = document.createElement("button");
     save.id = "save";
     save.type = "submit";
@@ -882,6 +1133,7 @@
     els.target.appendChild(title);
     els.target.appendChild(why);
     els.target.appendChild(row);
+    els.target.appendChild(kgNote);
     els.target.appendChild(save);
     els.target.onsubmit = function (event) {
       event.preventDefault();
@@ -1057,6 +1309,77 @@
     sheet.classList.add("in");
   }
 
+  function letterText(value) {
+    const text = String(value || "");
+    let out = "";
+    let dropped = false;
+    for (let i = 0; i < text.length; i++) {
+      const code = text.charCodeAt(i);
+      if ((code >= 65 && code <= 90) || (code >= 97 && code <= 122)) out += text[i];
+      else dropped = true;
+    }
+    return { text: out, dropped: dropped };
+  }
+
+  function bindLetters(input, note) {
+    let silent = false;
+    function show(on) {
+      input.classList.toggle("letters", on);
+      const box = input.closest("#search");
+      if (box) box.classList.toggle("letters", on);
+      note.hidden = !on;
+      note.textContent = on ? ui.letters_only : "";
+      if (on) input.setAttribute("aria-invalid", "true");
+      else input.removeAttribute("aria-invalid");
+    }
+    function write(value, caret) {
+      if (input.value === value) return;
+      silent = true;
+      input.value = value;
+      if (caret != null && input.setSelectionRange) {
+        const at = Math.max(0, Math.min(caret, value.length));
+        input.setSelectionRange(at, at);
+      }
+      silent = false;
+    }
+    input.acceptName = function () {
+      show(false);
+    };
+    input.autocomplete = "off";
+    input.spellcheck = false;
+    input.addEventListener("beforeinput", function (event) {
+      const kind = event.inputType || "";
+      if (kind.indexOf("insert") !== 0 || event.data == null) return;
+      const fresh = letterText(event.data);
+      if (!fresh.dropped) return;
+      event.preventDefault();
+      const start = input.selectionStart == null ? input.value.length : input.selectionStart;
+      const end = input.selectionEnd == null ? start : input.selectionEnd;
+      const raw = input.value.slice(0, start) + event.data + input.value.slice(end);
+      write(letterText(raw).text, start + fresh.text.length);
+      show(true);
+    });
+    input.addEventListener("input", function (event) {
+      if (silent) return;
+      const next = letterText(input.value);
+      if (next.dropped) {
+        const typed = event.data == null ? { dropped: true } : letterText(event.data);
+        write(next.text, input.selectionStart);
+        if (typed.dropped) show(true);
+        return;
+      }
+      show(false);
+    });
+  }
+
+  if (els.q) {
+    const searchNote = document.createElement("p");
+    searchNote.className = "search-note";
+    searchNote.hidden = true;
+    els.q.insertAdjacentElement("afterend", searchNote);
+    bindLetters(els.q, searchNote);
+  }
+
   els.q.addEventListener("focus", beginSearch);
   els.q.addEventListener("keydown", function (event) {
     if (event.key !== "Escape") return;
@@ -1094,6 +1417,7 @@
           button.addEventListener("mousedown", function (event) { event.preventDefault(); });
           button.addEventListener("click", function () {
             els.q.value = place.village;
+            if (els.q.acceptName) els.q.acceptName();
             endSearch(true);
             showPlace(place);
           });

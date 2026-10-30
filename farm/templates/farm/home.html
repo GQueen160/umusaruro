@@ -9,7 +9,8 @@
   <meta name="csrf-token" content="{{ csrf_token }}">
   <link rel="icon" href="{% static 'farm/logo.png' %}" type="image/png">
   <link rel="stylesheet" href="{% static 'farm/vendor/leaflet.css' %}">
-  <link rel="stylesheet" href="{% static 'farm/farm.css' %}?v=22">
+  <link rel="stylesheet" href="{% static 'farm/farm.css' %}?v=25">
+  <link rel="stylesheet" href="{% static 'farm/chat.css' %}?v=6">
 </head>
 <body{% if reader %} data-reader="{{ reader.id }}"{% endif %} data-lang="{{ lang }}">
   {% include "farm/lang.html" with float=1 %}
@@ -154,7 +155,9 @@
   {{ crops|json_script:"crop-data" }}
   {{ ui|json_script:"ui-copy" }}
   {% if office.sector_id %}{{ office|json_script:"office-data" }}{% endif %}
+  {% if not gate %}{% include "farm/chat.html" %}{% endif %}
   <script src="{% static 'farm/vendor/leaflet.js' %}"></script>
-  <script src="{% static 'farm/farm.js' %}?v=26"></script>
+  <script src="{% static 'farm/farm.js' %}?v=33"></script>
+  {% if not gate %}<script src="{% static 'farm/chat.js' %}?v=1"></script>{% endif %}
 </body>
 </html>

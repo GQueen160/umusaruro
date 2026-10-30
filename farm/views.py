@@ -11,7 +11,8 @@ from farm.advice import advise, crop_list, sector_board
 from farm.plan import country_rates, domestic_brief, holding_routine, journey_calendar, mark_check, mark_count
 from farm.models import FieldPlan
 from farm.role import READERS, by_group, current, known, office
-from umusaruro.lang import LANGS, safe_next, text
+from farm.chat import answer
+from umusaruro.lang import LANGS, current_lang, safe_next, text
 from farm.places import (
     BOUNDARIES,
     by_id,
@@ -128,6 +129,44 @@ def boundaries(request):
 @require_GET
 def search_places(request):
     return JsonResponse({"places": search(request.GET.get("q", ""))})
+
+
+@require_POST
+def chat_view(request):
+    body = _body(request)
+    message = " ".join(str(body.get("message") or "").split())
+    if not message:
+        return JsonResponse({"about": False, "ready": True, "answer": text(request, "chat_name_place")}, status=400)
+    if len(message) > 500:
+        message = message[:500]
+    try:
+        turns = int(request.session.get("chat_turns") or 0)
+    except (TypeError, ValueError):
+        turns = 0
+    if turns >= 40:
+        return JsonResponse({"about": False, "ready": True, "answer": text(request, "chat_later")})
+    raw_place = body.get("place") if isinstance(body.get("place"), dict) else {}
+    raw_crops = body.get("crops") if isinstance(body.get("crops"), list) else []
+    found = current(request)
+    result = answer(
+        message,
+        lang=current_lang(request),
+        reader=found["id"] if found else "farmer-large",
+        office=office(request),
+        page={
+            "district": str(raw_place.get("district") or "")[:80],
+            "sector": str(raw_place.get("sector") or "")[:80],
+            "cell": str(raw_place.get("cell") or "")[:80],
+            "village": str(raw_place.get("village") or "")[:80],
+        },
+        crops=[str(item)[:40] for item in raw_crops[:8]],
+    )
+    if result["status"] == 200:
+        request.session["chat_turns"] = turns + 1
+    return JsonResponse(
+        {"about": result["about"], "ready": result["ready"], "answer": result["answer"]},
+        status=result["status"],
+    )
 
 
 @require_GET

@@ -1,0 +1,18 @@
+{% load static %}
+{% load i18n_ui %}
+<div id="chat">
+  <button type="button" id="chat-open"><img src="{% static 'farm/chat-bot.png' %}" alt="">{% say "chat_open" %}</button>
+  <section id="chat-panel" hidden aria-labelledby="chat-title">
+    <div id="chat-head">
+      <h2 id="chat-title">{% say "chat_title" %}</h2>
+      <button type="button" id="chat-close">{% say "popup_close" %}</button>
+    </div>
+    <p class="chat-hint">{% say "chat_hint" %}</p>
+    <div id="chat-log" aria-live="polite"></div>
+    <form id="chat-form" data-you="{% say "you" %}" data-us="{% say "us" %}" data-wait="{% say "chat_wait" %}" data-fail="{% say "chat_fail" %}">
+      <label class="sr" for="chat-q">{% say "chat_title" %}</label>
+      <input id="chat-q" name="message" maxlength="500" autocomplete="off">
+      <button type="submit">{% say "chat_send" %}</button>
+    </form>
+  </section>
+</div>

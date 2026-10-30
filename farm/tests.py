@@ -436,3 +436,175 @@ class PlanTests(TestCase):
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 400)
+
+
+class ChatTests(TestCase):
+    def _model(self, replies):
+        import os
+        from unittest.mock import patch
+
+        calls = []
+
+        def transport(payload, key):
+            calls.append(payload)
+            return replies[len(calls) - 1]
+
+        return calls, patch.dict(os.environ, {"NVIDIA_API_KEY": "test-key", "NVIDIA_MODEL": ""}), transport
+
+    def test_a_question_outside_the_survey_is_turned_away(self):
+        from farm.chat import answer
+
+        calls, env, transport = self._model(['{"about": false, "place": "", "crops": []}'])
+        with env:
+            result = answer("What is the capital of France?", lang="en", reader="farmer-mini", office=None, page={}, crops=[], transport=transport)
+        self.assertFalse(result["about"])
+        self.assertIn("cannot answer", result["answer"])
+        self.assertIn("Kicukiro", result["answer"])
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0]["model"], "nvidia/nemotron-3.5-bolt-e4b")
+
+    def test_a_yield_question_is_read_from_the_district(self):
+        from farm.chat import answer
+
+        replies = [
+            '{"about": true, "place": "", "crops": []}',
+            "Kicukiro printed a maize harvest for the district.",
+        ]
+        calls, env, transport = self._model(replies)
+        with env:
+            result = answer(
+                "What did maize yield in Kicukiro?",
+                lang="en", reader="farmer-mini", office=None, page={}, crops=[], transport=transport,
+            )
+        self.assertTrue(result["about"])
+        self.assertEqual(result["answer"], replies[1])
+        facts = calls[1]["messages"][1]["content"].split("FACTS:\n", 1)[1]
+        self.assertIn("Kicukiro", facts)
+        self.assertIn("kg/ha", facts)
+        self.assertNotIn("99999", facts)
+
+    def test_a_number_the_survey_did_not_print_is_dropped(self):
+        from farm.chat import answer
+
+        replies = [
+            '{"about": true, "place": "Kicukiro", "crops": ["maize"]}',
+            "The maize yield in Kicukiro is 99999 kg.",
+        ]
+        calls, env, transport = self._model(replies)
+        with env:
+            result = answer("maize in Kicukiro", lang="en", reader="farmer-large", office=None, page={}, crops=[], transport=transport)
+        self.assertNotIn("99999", result["answer"])
+        self.assertIn("Kicukiro", result["answer"])
+        self.assertIn("kg/ha", result["answer"])
+
+    def test_a_shared_village_name_asks_for_the_district(self):
+        from farm.chat import answer
+
+        replies = ['{"about": true, "place": "Mukoni", "crops": ["maize"]}']
+        calls, env, transport = self._model(replies)
+        with env:
+            result = answer("Tell me about Mukoni maize", lang="en", reader="farmer-mini", office=None, page={}, crops=[], transport=transport)
+        self.assertTrue(result["about"])
+        self.assertIn("Mukoni", result["answer"])
+        self.assertIn("Name the district", result["answer"])
+        self.assertEqual(len(calls), 1)
+
+    def test_an_officer_stays_inside_the_chosen_district(self):
+        from farm.chat import answer
+
+        replies = [
+            '{"about": true, "place": "Nyagatare", "crops": ["maize"]}',
+            "You read Kicukiro only. Maize there is the printed district harvest.",
+        ]
+        calls, env, transport = self._model(replies)
+        with env:
+            result = answer(
+                "What did maize yield in Nyagatare?",
+                lang="en",
+                reader="district",
+                office={"district": "Kicukiro"},
+                page={},
+                crops=[],
+                transport=transport,
+            )
+        facts = calls[1]["messages"][1]["content"].split("FACTS:\n", 1)[1]
+        self.assertIn("You read Kicukiro only.", facts)
+        self.assertTrue(result["answer"].startswith("You read Kicukiro only."))
+        self.assertNotIn("99999", result["answer"])
+
+    def test_the_chat_stays_quiet_without_a_key(self):
+        import os
+        from unittest.mock import patch
+        from farm.chat import answer
+
+        with patch.dict(os.environ, {"NVIDIA_API_KEY": ""}):
+            result = answer("What did maize yield in Kicukiro?", lang="en", reader="farmer-mini", office=None, page={}, crops=[])
+        self.assertEqual(result["status"], 503)
+        self.assertIn("NVIDIA", result["answer"])
+
+    def test_the_field_offers_the_chat_and_the_gate_does_not(self):
+        gate = self.client.get("/")
+        self.assertNotContains(gate, 'id="chat-open"')
+        self.client.post("/role/", {"role": "farmer-mini"})
+        field = self.client.get("/field/")
+        self.assertContains(field, 'id="chat-open"')
+        self.assertContains(field, "Ask about a village")
+
+    def test_the_endpoint_turns_away_a_question_outside_the_survey(self):
+        from unittest.mock import patch
+
+        def fake(messages, max_tokens=200, timeout=20, transport=None):
+            return '{"about": false, "place": "", "crops": []}'
+
+        with patch("farm.chat.complete", side_effect=fake):
+            response = self.client.post(
+                "/api/chat/",
+                data={"message": "What is the capital of France?"},
+                content_type="application/json",
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json()["about"])
+        self.assertIn("cannot answer", response.json()["answer"])
+
+    def test_a_kinyarwanda_crop_question_stays_inside_the_survey(self):
+        from farm.chat import answer
+
+        calls, env, transport = self._model(['{"about": false, "place": "", "crops": []}'])
+        with env:
+            result = answer("Nshaka guhinga umuceri", lang="rw", reader="farmer-mini", office=None, page={}, crops=[], transport=transport)
+        self.assertTrue(result["about"])
+        self.assertIn("umudugudu", result["answer"])
+        self.assertEqual(len(calls), 1)
+
+    def test_a_greeting_explains_what_the_chat_can_do(self):
+        from farm.chat import answer
+
+        calls, env, transport = self._model(['{"about": false, "greeting": true, "place": "", "crops": []}'])
+        with env:
+            result = answer("How are you today?", lang="en", reader="farmer-mini", office=None, page={}, crops=[], transport=transport)
+        self.assertTrue(result["about"])
+        self.assertIn("Hello.", result["answer"])
+        self.assertIn("harvest", result["answer"])
+        self.assertNotIn("cannot answer", result["answer"])
+        self.assertEqual(len(calls), 1)
+
+        calls, env, transport = self._model(['{"about": false, "greeting": false, "place": "", "crops": []}'])
+        with env:
+            result = answer("Muraho", lang="rw", reader="farmer-mini", office=None, page={}, crops=[], transport=transport)
+        self.assertTrue(result["about"])
+        self.assertIn("Muraho.", result["answer"])
+        self.assertIn("umusaruro", result["answer"])
+
+    def test_a_greeting_still_explains_when_the_model_fails(self):
+        import os
+        from unittest.mock import patch
+        from farm.chat import answer
+        from farm.nvidia import NvidiaError
+
+        def transport(payload, key):
+            raise NvidiaError("failed")
+
+        with patch.dict(os.environ, {"NVIDIA_API_KEY": "test-key"}):
+            result = answer("Muraho", lang="rw", reader="farmer-mini", office=None, page={}, crops=[], transport=transport)
+        self.assertEqual(result["status"], 200)
+        self.assertIn("Muraho.", result["answer"])
