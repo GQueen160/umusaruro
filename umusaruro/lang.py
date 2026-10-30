@@ -235,6 +235,11 @@ COPY = {
         "fr": "Ce n'est pas un nombre.",
         "rw": "Ibyo si umubare.",
     },
+    "letters_only": {
+        "en": "That is not a letter.",
+        "fr": "Ce n'est pas une lettre.",
+        "rw": "Ibyo si inyuguti.",
+    },
     "country_goal": {"en": "Country goal on the farm", "fr": "Objectif du pays sur la ferme", "rw": "Intego y'igihugu ku murima"},
     "country_harvest": {"en": "Country harvest on the farm", "fr": "Récolte du pays sur la ferme", "rw": "Umusaruro w'igihugu ku murima"},
     "per_ha": {"en": "kg/ha", "fr": "kg/ha", "rw": "kg/ha"},
@@ -252,6 +257,21 @@ COPY = {
         "en": "You are exceeding the size of the farm.",
         "fr": "Vous dépassez la taille de la ferme.",
         "rw": "Urenga ubunini bw'umurima.",
+    },
+    "exceed_max": {
+        "en": "You are exceeding the maximum on this land.",
+        "fr": "Vous dépassez le maximum sur cette terre.",
+        "rw": "Urenga ingano ntarengwa kuri ubu butaka.",
+    },
+    "over_max": {
+        "en": "The maximum on this land is {max} kg.",
+        "fr": "Le maximum sur cette terre est {max} kg.",
+        "rw": "Ingano ntarengwa kuri ubu butaka ni {max} kg.",
+    },
+    "farm_cap": {
+        "en": "The farm is {farm} {unit}.",
+        "fr": "La ferme fait {farm} {unit}.",
+        "rw": "Umurima ni {farm} {unit}.",
     },
     "over_farm": {
         "en": "The farm is {farm} {unit}. That is {over} {unit} more than the farm.",
@@ -277,6 +297,80 @@ COPY = {
         "rw": "Umubare w'igihugu kuri iki gihingwa ntiwanditswe.",
     },
     "change_farm": {"en": "Change the answers", "fr": "Changer les réponses", "rw": "Hindura ibisubizo"},
+    "chat_open": {"en": "Ask", "fr": "Demander", "rw": "Baza"},
+    "chat_title": {"en": "Ask Umusaruro", "fr": "Demander à Umusaruro", "rw": "Baza Umusaruro"},
+    "chat_hint": {
+        "en": "Ask about a village, a district, or a crop in this survey.",
+        "fr": "Demandez un village, un district, ou une culture de cette enquête.",
+        "rw": "Baza umudugudu, akarere, cyangwa igihingwa muri iyi raporo.",
+    },
+    "chat_send": {"en": "Send", "fr": "Envoyer", "rw": "Ohereza"},
+    "chat_wait": {"en": "Reading the survey…", "fr": "Lecture de l'enquête…", "rw": "Ndasoma raporo…"},
+    "chat_outside": {
+        "en": "Umusaruro cannot answer that. Ask about a village or a district in Rwanda, and a crop this survey prints. For example: What did maize yield in Kicukiro? You can also ask about rain, irrigation, improved seed, or fertilizer in that district.",
+        "fr": "Umusaruro ne peut pas répondre à cela. Demandez un village ou un district du Rwanda, et une culture de cette enquête. Par exemple : Quel est le rendement du maïs à Kicukiro ? Vous pouvez aussi demander la pluie, l'irrigation, la semence améliorée ou l'engrais de ce district.",
+        "rw": "Umusaruro ntibishobora kubisubiza. Baza umudugudu cyangwa akarere mu Rwanda, n'igihingwa iyi raporo ivuga. Urugero: Umusaruro w'ibigori muri Kicukiro ni uwuhe? Ushobora kandi kubaza imvura, kuvoma, imbuto zizungu, cyangwa ifumbire muri ako karere.",
+    },
+    "chat_hello": {
+        "en": "Hello. I can help with a village or a district in Rwanda, and a crop this survey prints. Ask about the harvest, rain, irrigation, improved seed, or fertilizer. For example: What did maize yield in Kicukiro?",
+        "fr": "Bonjour. Je peux aider pour un village ou un district du Rwanda, et une culture de cette enquête. Demandez la récolte, la pluie, l'irrigation, la semence améliorée ou l'engrais. Par exemple : Quel est le rendement du maïs à Kicukiro ?",
+        "rw": "Muraho. Nshobora kugufasha ku mudugudu cyangwa akarere mu Rwanda, n'igihingwa iyi raporo ivuga. Baza umusaruro, imvura, kuvoma, imbuto zizungu, cyangwa ifumbire. Urugero: Umusaruro w'ibigori muri Kicukiro ni uwuhe?",
+    },
+    "chat_offline": {
+        "en": "The chat is not connected yet. The server needs an NVIDIA API key.",
+        "fr": "Le dialogue n'est pas encore relié. Le serveur a besoin d'une clé API NVIDIA.",
+        "rw": "Iki kiganiro ntikirahuza. Seriveri ikeneye urufunguzo rwa NVIDIA.",
+    },
+    "chat_fail": {
+        "en": "The model did not answer. Ask again in one sentence that names a place and a crop.",
+        "fr": "Le modèle n'a pas répondu. Redemandez en une phrase qui nomme un lieu et une culture.",
+        "rw": "Icyo model ntikibashije gusubiza. Baza incuro imwe uvuga ahantu n'igihingwa.",
+    },
+    "chat_later": {
+        "en": "That is enough questions for this visit. Ask again later.",
+        "fr": "Cela suffit pour cette visite. Redemandez plus tard.",
+        "rw": "Ibibazo byahagije kuri ubu. Ongera ubaze nyuma.",
+    },
+    "chat_name_place": {
+        "en": "Name a village or a district, and a crop this survey prints. For example: What did maize yield in Kicukiro?",
+        "fr": "Nommez un village ou un district, et une culture de cette enquête. Par exemple : Quel est le rendement du maïs à Kicukiro ?",
+        "rw": "Vuga umudugudu cyangwa akarere, n'igihingwa iyi raporo ivuga. Urugero: Umusaruro w'ibigori muri Kicukiro ni uwuhe?",
+    },
+    "chat_two": {
+        "en": "Name one district. You named {a} and {b}.",
+        "fr": "Nommez un seul district. Vous avez nommé {a} et {b}.",
+        "rw": "Vuga akarere kamwe. Wavuzwe {a} na {b}.",
+    },
+    "chat_one_at_a_time": {
+        "en": "Name one district at a time.",
+        "fr": "Nommez un district à la fois.",
+        "rw": "Vuga akarere kamwe ku nshuro.",
+    },
+    "chat_shared": {
+        "en": "{name} is the name of more than one place: {places}. Name the district as well.",
+        "fr": "{name} est le nom de plus d'un lieu : {places}. Nommez aussi le district.",
+        "rw": "{name} ni izina ry'ahantu henshi: {places}. Vuga n'akarere.",
+    },
+    "chat_shared_one": {
+        "en": "{name} is more than one place in {district}: {places}. The figures below are for that district.",
+        "fr": "{name} est plus d'un lieu dans {district} : {places}. Les chiffres ci-dessous sont ceux de ce district.",
+        "rw": "{name} ni ahantu henshi muri {district}: {places}. Imibare iri hepfo ni iy'ako karere.",
+    },
+    "chat_locked": {
+        "en": "You read {district} only.",
+        "fr": "Vous ne lisez que {district}.",
+        "rw": "Usoma {district} gusa.",
+    },
+    "chat_sector": {
+        "en": "There is no sector table for {sector}. These figures are for {district} district.",
+        "fr": "Il n'y a pas de tableau pour le secteur de {sector}. Ces chiffres sont ceux du district de {district}.",
+        "rw": "Nta mibare y'umurenge wa {sector}. Imibare ni iya karere ka {district}.",
+    },
+    "chat_village": {
+        "en": "{village} is a village in {cell}, {sector}, {district}. The survey is not published for one village. These figures are for {district} district.",
+        "fr": "{village} est un village de {cell}, {sector}, {district}. L'enquête n'est pas publiée pour un village. Ces chiffres sont ceux du district de {district}.",
+        "rw": "{village} ni umudugudu uri mu kagari ka {cell}, umurenge wa {sector}, akarere ka {district}. Raporo ntisoza umudugudu. Imibare ni iya karere ka {district}.",
+    },
 }
 
 

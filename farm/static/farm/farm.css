@@ -31,6 +31,14 @@ button, input, select { font: inherit; }
   background: transparent;
   color: #f4f7f2;
 }
+#search.letters { border-color: #e15b4a; }
+#q.letters:focus-visible { outline: 2px solid #e15b4a; }
+.search-note {
+  margin: 0 0 6px;
+  color: #e15b4a;
+  font-weight: 700;
+  line-height: 1.35;
+}
 .hint { margin: 0 0 6px; color: #a9bfb0; font-size: 0.85rem; }
 #results {
   border-top: 1px solid rgba(255,255,255,0.12);
@@ -363,6 +371,9 @@ details.ask summary { cursor: pointer; font-weight: 700; color: #a9bfb0; }
 .popup-card input.bad,
 .popup-card input.digits,
 #kg.digits { border-color: #e15b4a; }
+.popup-card input.bad:focus,
+.popup-card input.digits:focus,
+#kg.digits:focus { outline: 2px solid #e15b4a; }
 .digits-note {
   margin: 2px 0 8px;
   color: #e15b4a;
