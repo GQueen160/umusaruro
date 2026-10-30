@@ -5,7 +5,7 @@
 {% block content %}
 <section class="lead">
   <h1>{% say "overview_h1" %}</h1>
-  <p class="legend-line">Map on the left. Controls on the right. Color is the layer you choose. Maize is the milestone crop; every other yield is on the <a href="{% url 'advisor' %}">crop advisor</a>.</p>
+  <p class="legend-line">Color is the layer you choose. Maize is the milestone crop; every other yield is on the <a href="{% url 'advisor' %}">crop advisor</a>.</p>
 </section>
 
 <section class="map-block" data-layer="action">
@@ -29,7 +29,7 @@
     <figcaption>Outlines: geoBoundaries. Click a district.</figcaption>
   </figure>
   <div class="board">
-    <div class="layers" role="group" aria-label="Map layer" hidden>
+    <div class="layers" role="group" aria-label="Map layer">
       {% for layer in layers %}<button type="button" data-layer="{{ layer.key }}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}">{{ layer.name }}</button>{% endfor %}
     </div>
     <div class="kpis">

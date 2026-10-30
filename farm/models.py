@@ -20,6 +20,8 @@ class FieldPlan(models.Model):
     year = models.PositiveSmallIntegerField(default=2026)
     target_crop = models.CharField(max_length=30)
     target_kg = models.DecimalField(max_digits=12, decimal_places=1)
+    holding = models.JSONField(null=True, blank=True)
+    checks = models.JSONField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

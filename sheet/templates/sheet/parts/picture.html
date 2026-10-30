@@ -1,0 +1,31 @@
+{% load stats %}
+<section class="picture">
+  <article>
+    <h2>Maize against the milestones</h2>
+    <div class="bullet" aria-hidden="true">
+      <span class="bullet-bar" style="width: {{ g.maize }}%"></span>
+      <span class="needle" style="left: {{ g.early }}%"></span>
+      <span class="needle late" style="left: {{ g.late }}%"></span>
+    </div>
+    <p class="legend-line"><span class="swatch leaf"></span> All farms in {{ s.name }}, {% stat s.maize_kg %} ({% stat s.maize_t %}).
+      <span class="swatch needle"></span> <span class="ref">PSTA 5</span> <span class="ref">{{ s.milestones.0.column }}</span> {% stat s.milestones.0.target %}
+      <span class="swatch needle late"></span> <span class="ref">{{ s.milestones.1.column }}</span> {% stat s.milestones.1.target %}
+      The track starts at zero and ends at the higher of the harvest and the later milestone. A bar past a line is above that milestone.</p>
+  </article>
+  <article>
+    <h2>Rain against the median</h2>
+    <div class="yield-row">
+      <span>{{ s.name }}</span>
+      <div class="bar-track"><span class="bar all" style="width: {{ g.rain }}%"></span></div>
+      <span class="yield-num">{% stat s.rain_total compact=True %}</span>
+    </div>
+    <div class="yield-row">
+      <span>Median district</span>
+      <div class="bar-track"><span class="bar lsf" style="width: {{ g.median }}%"></span></div>
+      <span class="yield-num">{% stat s.rain_median compact=True %}</span>
+    </div>
+    <p class="legend-line">Bar length compares the two totals from zero. The longer bar is the higher rainfall.
+      {{ s.name }} is {% if s.rain_below %}below{% else %}at or above{% endif %} the median.
+      Rain decides only whether irrigation can be named first.</p>
+  </article>
+</section>

@@ -9,7 +9,7 @@
   <meta name="csrf-token" content="{{ csrf_token }}">
   <link rel="icon" href="{% static 'farm/logo.png' %}" type="image/png">
   <link rel="stylesheet" href="{% static 'farm/vendor/leaflet.css' %}">
-  <link rel="stylesheet" href="{% static 'farm/farm.css' %}?v=7">
+  <link rel="stylesheet" href="{% static 'farm/farm.css' %}?v=22">
 </head>
 <body{% if reader %} data-reader="{{ reader.id }}"{% endif %} data-lang="{{ lang }}">
   {% include "farm/lang.html" with float=1 %}
@@ -17,6 +17,43 @@
 
   {% if gate %}
   <div class="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+    {% if place_for %}
+    <form method="post" action="{% url 'role_choose' %}">
+      {% csrf_token %}
+      <input type="hidden" name="role" value="{{ place_for }}">
+      <p class="gate-kicker"><img class="mark" src="{% static 'farm/logo.png' %}" alt="">Umusaruro</p>
+      <h1 id="gate-title">{% if place_for == "district" %}{% say "office_district" %}{% else %}{% say "office_sector" %}{% endif %}</h1>
+      <p class="gate-lead">{% say "office_hint" %}</p>
+      <label>{% say "pick_district" %}
+        <select name="district" required>
+          <option value="">{% say "opt_district" %}</option>
+          {% for row in districts %}
+          <option value="{{ row.name }}"{% if row.name == picked_district %} selected{% endif %}>{{ row.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      {% if place_for == "sector" %}
+      <label>{% say "pick_sector" %}
+        <select name="sector_id">
+          <option value="">{% say "opt_sector" %}</option>
+          {% for row in sectors %}
+          <option value="{{ row.id }}">{{ row.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      {% endif %}
+      {% if place_for == "sector" %}
+      <button class="open" type="submit" name="step" value="list">{% say "office_sectors" %}</button>
+      {% if sectors %}<button class="open" type="submit" name="step" value="open">{% say "office_open" %}</button>{% endif %}
+      {% else %}
+      <button class="open" type="submit">{% say "office_open" %}</button>
+      {% endif %}
+    </form>
+    <form class="back" method="post" action="{% url 'role_clear' %}">
+      {% csrf_token %}
+      <button type="submit">{% say "change" %}</button>
+    </form>
+    {% else %}
     <form method="post" action="{% url 'role_choose' %}">
       {% csrf_token %}
       <p class="gate-kicker"><img class="mark" src="{% static 'farm/logo.png' %}" alt="">Umusaruro</p>
@@ -24,7 +61,7 @@
       <p class="gate-lead">{% say "who_lead" %}</p>
       <fieldset>
         <legend>{% say "farmer" %}</legend>
-        <div class="gate-choices two">
+        <div class="gate-choices">
           {% for person in farmers %}
           <button type="submit" name="role" value="{{ person.id }}"{% if forloop.first %} autofocus{% endif %}>
             <strong>{% tr person "title" %}</strong>
@@ -45,16 +82,17 @@
         </div>
       </fieldset>
     </form>
+    {% endif %}
   </div>
   {% endif %}
 
-  <form id="search" role="search"{% if gate %} hidden{% endif %}>
+  <form id="search" role="search"{% if gate or office.sector_id %} hidden{% endif %}>
     <label class="sr" for="q">{% say "search" %}</label>
     <input id="q" name="q" autocomplete="off" placeholder="{% say "search" %}">
     <div id="results" hidden></div>
   </form>
 
-  <div class="map-tools"{% if gate %} hidden{% endif %}>
+  <div class="map-tools"{% if gate or office.sector_id %} hidden{% endif %}>
     <button type="button" id="where" class="tool">{% say "where" %}</button>
     <button type="button" id="voice" class="tool voice">{% say "voice" %}</button>
   </div>
@@ -68,13 +106,20 @@
     </form>
     {% endif %}
     <p class="brand"><img class="mark" src="{% static 'farm/logo.png' %}" alt=""><span class="brand-copy">Umusaruro <span>{% if reader.id == "sector" %}{% say "brand_sector" %}{% else %}{% say "brand_farmer" %}{% endif %}</span></span></p>
-    {% if reader.id == "sector" %}
-    <p id="prompt">{% say "prompt_sector" %}</p>
+    {% if reader.group == "farmer" %}
+    <ol id="steps" class="steps">
+      <li data-step="place" aria-current="step">{% say "step_place" %}</li>
+      <li data-step="crops">{% say "step_crops" %}</li>
+      <li data-step="ask">{% if reader.id == "farmer-domestic" %}{% say "step_note" %}{% else %}{% say "step_ask" %}{% endif %}</li>
+    </ol>
+    <p id="prompt">{% say "prompt_place" %}</p>
+    {% elif reader.id == "sector" %}
+    <p id="prompt"{% if office %} hidden{% endif %}>{% say "prompt_sector" %}</p>
     {% else %}
-    <p id="prompt">{% say "prompt_farmer" %} {% if reader %}{% tr reader "use" %}{% endif %}</p>
+    <p id="prompt">{% say "prompt_farmer" %}</p>
     {% endif %}
     <div id="talk"></div>
-    <p id="place" hidden></p>
+    <p id="place"{% if not office.sector %} hidden{% endif %}>{% if office.sector %}{{ office.sector }} · {{ office.district }}{% endif %}</p>
     <div id="flag" class="flag">
       <div class="flag-key" role="group" aria-label="{% say "flag_name" %}">
         <span class="flag-item" data-flag="plant"><i></i>{% say "flag_plant" %}</span>
@@ -84,6 +129,7 @@
       <p id="flag-line">{% say "flag_wait" %}</p>
     </div>
 
+    {% if not office.sector_id %}
     <details id="ladder"{% if reader.id == "sector" %} open{% endif %}>
       <summary>{% say "ladder" %} <span>{% say "ladder_hint" %}</span></summary>
       <label>{% say "pick_district" %} <select id="pick-district"></select></label>
@@ -91,18 +137,24 @@
       <label>{% say "pick_cell" %} <select id="pick-cell" disabled></select></label>
       <label>{% say "pick_village" %} <select id="pick-village" disabled></select></label>
     </details>
+    {% endif %}
 
-    <div id="crops"></div>
+    <div id="crops"{% if reader.group == "farmer" %} hidden{% endif %}></div>
+    {% if reader.group == "farmer" %}
+    <button type="button" id="continue" hidden>{% if reader.id == "farmer-domestic" %}{% say "continue_note" %}{% else %}{% say "continue_ask" %}{% endif %}</button>
+    {% endif %}
     <div id="advice"></div>
     {% if reader.group == "farmer" %}
     <form id="target" hidden></form>
     <div id="plans"></div>
+    <div id="calendar" hidden></div>
     {% endif %}
   </section>
 
   {{ crops|json_script:"crop-data" }}
   {{ ui|json_script:"ui-copy" }}
+  {% if office.sector_id %}{{ office|json_script:"office-data" }}{% endif %}
   <script src="{% static 'farm/vendor/leaflet.js' %}"></script>
-  <script src="{% static 'farm/farm.js' %}?v=8"></script>
+  <script src="{% static 'farm/farm.js' %}?v=26"></script>
 </body>
 </html>

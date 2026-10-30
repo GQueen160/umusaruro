@@ -12,6 +12,7 @@ from functools import lru_cache
 
 from umusaruro.cells import load as load_cells
 from umusaruro.rainfall import load as load_rainfall
+from sheet.sheet import bar_width
 from umusaruro.rules import classify
 
 SAS_A = (
@@ -383,6 +384,143 @@ def _seed_card(district: str, first: bool) -> dict:
             _fact(small, "%", "20", FARM["small"]),
             _fact(large, "%", "20", FARM["large"]),
         ) if item],
+    }
+
+
+SEED_ROW = {
+    "maize": "maize",
+    "paddy_rice": "paddy_rice",
+    "wheat": "wheat",
+    "irish_potatoes": "irish_potato",
+    "cassava": "cassava",
+    "vegetables": "vegetables",
+    "soya_beans": "soybean",
+}
+
+ACTIONS = {
+    "irrigation": {"en": "Irrigate", "fr": "Irriguer", "rw": "Voma"},
+    "seed": {"en": "Improved seed", "fr": "Semence améliorée", "rw": "Imbuto zizungu"},
+    None: {"en": "No lever first", "fr": "Aucun levier en premier", "rw": "Nta gikoresho kiruta"},
+}
+
+
+def _bar(key: str, labels: dict, value: Decimal | None, peak: Decimal, unit: str, source: dict) -> dict:
+    return {
+        "key": key,
+        "label_en": labels["en"],
+        "label_fr": labels["fr"],
+        "label_rw": labels["rw"],
+        "value": pretty(value),
+        "unit": unit,
+        "width": bar_width(value, peak),
+        "blank": value is None,
+        "survey": source["survey"],
+        "table": source["table"],
+        "url": source["url"],
+    }
+
+
+def _board_row(kind: str, titles: dict, unit: str, bars: list[dict], captions: dict) -> dict:
+    return {
+        "kind": kind,
+        "title_en": titles["en"],
+        "title_fr": titles["fr"],
+        "title_rw": titles["rw"],
+        "unit": unit,
+        "bars": bars,
+        "caption_en": captions["en"],
+        "caption_fr": captions["fr"],
+        "caption_rw": captions["rw"],
+    }
+
+
+def sector_board(district: str, crops: list[str]) -> dict:
+    """The district row a sector office can see. There is no sector table."""
+    known = [crop for crop in crops if crop in {key for key, *_ in CROPS}]
+    rain = _rain().get(district)
+    decision = classify(_cells(), district, None if rain is None else rain.below_median)
+    hundred = Decimal(100)
+    small, large = FARM["small"], FARM["large"]
+    rows = []
+    for kind, table, crop, measure, titles in (
+        ("water", "31", "", "irrigation", {"en": "Irrigation", "fr": "Irrigation", "rw": "Kuvoma"}),
+        ("seed", "20", "all_crops", "farmers", {"en": "Improved seed, all crops", "fr": "Semence améliorée, toutes cultures", "rw": "Imbuto zizungu, ibihingwa byose"}),
+        ("fertilizer", "25", "all_crops", "farmers", {"en": "Inorganic fertilizer, all crops", "fr": "Engrais minéral, toutes cultures", "rw": "Ifumbire mvaruganda, ibihingwa byose"}),
+    ):
+        source = {"survey": "SAS A 2026", "table": table, "url": SAS_A}
+        bars = [
+            _bar("small", small, _read(table, district, "ssf", crop, measure), hundred, "%", source),
+            _bar("large", large, _read(table, district, "lsf", crop, measure), hundred, "%", source),
+        ]
+        if any(not bar["blank"] for bar in bars):
+            rows.append(_board_row(
+                kind, titles, "%", bars,
+                {
+                    "en": "Bar length is the share of farmers, from none to all. A missing bar is a blank cell, not zero.",
+                    "fr": "La longueur est la part des agriculteurs, de personne à tous. Une barre absente est une case vide, pas zéro.",
+                    "rw": "Uburebure ni umugabane w'abahinzi, kuva ntawe kugeza bose. Umurongo utabonetse ni akazu katanditse, si zeru.",
+                },
+            ))
+    if rain is not None:
+        peak = max(rain.total_mm, rain.median_mm)
+        rows.append(_board_row(
+            "rain",
+            {"en": "Rain, Sep 2025–Feb 2026", "fr": "Pluie, sep 2025–fév 2026", "rw": "Imvura, Sep 2025–Feb 2026"},
+            "mm",
+            [
+                _bar("district", {"en": district, "fr": district, "rw": district}, rain.total_mm, peak, "mm",
+                     {"survey": rain.version, "table": "Sep 2025–Feb 2026", "url": CHIRPS}),
+                _bar("median", {"en": "Median district", "fr": "District médian", "rw": "Akarere k'hagati"}, rain.median_mm, peak, "mm",
+                     {"survey": rain.version, "table": "Sep 2025–Feb 2026", "url": CHIRPS}),
+            ],
+            {
+                "en": "Bar length compares the two totals from zero. The longer bar is the higher rainfall. Rain only decides whether irrigation is named first.",
+                "fr": "La longueur compare les deux totaux depuis zéro. La barre la plus longue est la pluie la plus haute. La pluie décide seulement si l'irrigation est nommée en premier.",
+                "rw": "Uburebure bugereranya imibare yombi kuva kuri zeru. Umurongo muremure ni imvura nyinshi. Imvura ni yo yonyine ihitamo niba kuvoma ari byo banza.",
+            },
+        ))
+    for crop in known:
+        yields = _yields(district, crop)
+        rw, en, fr = crop_label(crop)
+        values = [value for value in yields.values() if value is not None]
+        peak = max(values) if values else Decimal(1)
+        rows.append(_board_row(
+            crop,
+            {"en": en, "fr": fr, "rw": rw},
+            "kg/ha",
+            [
+                _bar("district", FARM["district"], yields["all"], peak, "kg/ha", {"survey": "SAS A 2026", "table": "13", "url": SAS_A}),
+                _bar("large", large, yields["large"], peak, "kg/ha", {"survey": "SAS A 2026", "table": "14", "url": SAS_A}),
+                _bar("country", FARM["national"], yields["national"], peak, "kg/ha", {"survey": "SAS A 2026", "table": "13", "url": SAS_A}),
+            ],
+            {
+                "en": "Bar length compares these published yields from zero. The longest bar is the highest of the three. A missing bar is a blank cell, not zero. The country bar is the national harvest, not this district.",
+                "fr": "La longueur compare ces rendements publiés depuis zéro. La barre la plus longue est la plus haute des trois. Une barre absente est une case vide, pas zéro. La barre du pays est la récolte nationale, pas ce district.",
+                "rw": "Uburebure bugereranya uyu musaruro wabanditswe kuva kuri zeru. Umurongo muremure ni uwo hejuru muri utatu. Umurongo utabonetse ni akazu katanditse, si zeru. Umurongo w'igihugu ni umusaruro w'igihugu, si uyu karere.",
+            },
+        ))
+        seed_key = SEED_ROW.get(crop)
+        if seed_key:
+            seed = _read("21", "National", "all", seed_key, "improved")
+            if seed is not None:
+                rows.append(_board_row(
+                    crop + "-seed",
+                    {"en": f"{en}, improved seed", "fr": f"{fr}, semence améliorée", "rw": f"{rw}, imbuto zizungu"},
+                    "%",
+                    [_bar("country", FARM["national"], seed, hundred, "%", {"survey": "SAS A 2026", "table": "21", "url": SAS_A})],
+                    {
+                        "en": "Bar length is the country share of seed, from none to all. This table has no district column.",
+                        "fr": "La longueur est la part nationale de la semence, de rien à tout. Ce tableau n'a pas de colonne par district.",
+                        "rw": "Uburebure ni umugabane w'imbuto z'igihugu, kuva nta na kimwe kugeza byose. Iyi mbonerahamwe nta karere ifite.",
+                    },
+                ))
+    action = ACTIONS[decision.action]
+    return {
+        "action": decision.action or "none",
+        "title_en": action["en"],
+        "title_fr": action["fr"],
+        "title_rw": action["rw"],
+        "rows": rows,
     }
 
 

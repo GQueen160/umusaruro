@@ -8,55 +8,60 @@
   <p class="legend-line"><span class="ref">Season A 2026</span> Table <span class="ref">13</span> prints a yield for {% stat crop_count %}. Bar length compares a crop with the highest yield in its group. A blank stays blank.</p>
 </section>
 
-{% if reader %}
-<p class="legend-line">{% tr reader "use" %} {% if reader.note_en %}{% tr reader "note" %}{% endif %}</p>
-{% else %}
-<section>
-  <h2>Who is reading</h2>
-  <div class="who">
-    <article>
-      <p class="eyebrow">Farmer</p>
-      <h3>One field</h3>
-      <p><a href="{% url 'field' %}">Farmer map</a>. The pin is the village. The yield is the district’s.</p>
-    </article>
-    <article>
-      <p class="eyebrow">Sector</p>
-      <h3>The district row</h3>
-      <p>No sector table. Read the district the sector sits in.</p>
-    </article>
-    <article>
-      <p class="eyebrow">District</p>
-      <h3>Yield, then the shared levers</h3>
-      <p>Yield by district. Shared levers live on the <a href="{% url 'overview' %}">district map</a>.</p>
-    </article>
-    <article>
-      <p class="eyebrow">Ministry</p>
-      <h3>The national row</h3>
-      <p>The Rwanda row. The <span class="ref">PSTA 5</span> milestone is maize only.</p>
-    </article>
-  </div>
+<section class="journey" aria-label="Country dashboard">
+  <article>
+    <p class="eyebrow">Before</p>
+    <h3>Before planting</h3>
+    <div class="yield-chart">
+      {% for row in board.seeds %}
+      <div class="yield-row">
+        <span>{{ row.en }}</span>
+        <div class="bar-track"><span class="bar all" style="width: {{ row.width }}%"></span></div>
+        <span class="yield-num">{% stat row.stat compact=True %}</span>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="legend-line">Improved seed, national, Table <span class="ref">21</span>. Bar length is the share of seed, from none to all. No soil test. No variety name. A crop missing here is not in that table. It is not zero.</p>
+  </article>
+  <article>
+    <p class="eyebrow">Field</p>
+    <h3>In the field</h3>
+    <div class="bullet" aria-hidden="true">
+      <span class="bullet-bar" style="width: {{ board.maize_width }}%"></span>
+      {% for mark in board.marks %}<span class="needle{% if mark.late %} late{% endif %}" style="left: {{ mark.width }}%"></span>{% endfor %}
+    </div>
+    <p class="legend-line"><span class="swatch leaf"></span> National maize {% stat board.maize %}, Table <span class="ref">13</span>.
+      {% for mark in board.marks %}<span class="swatch needle{% if mark.late %} late{% endif %}"></span> <span class="ref">PSTA 5</span> <span class="ref">{{ mark.column }}</span> {% stat mark.stat %}{% if not forloop.last %}. {% endif %}{% endfor %}
+      The track starts at zero and ends at the higher of the harvest and the later milestone. A bar past a line is above that milestone.
+      Table <span class="ref">14</span> is large farms. The maize series is <span class="ref">2019</span>–<span class="ref">2026</span>.</p>
+  </article>
+  <article>
+    <p class="eyebrow">After</p>
+    <h3>After harvest</h3>
+    <div class="yield-chart">
+      {% for row in board.losses %}
+      <div class="yield-row">
+        <span>{{ row.en }}</span>
+        <div class="bar-track"><span class="bar all" style="width: {{ row.width }}%"></span></div>
+        <span class="yield-num">{% stat row.stat compact=True %}</span>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="legend-line">Post-harvest loss, national, Table <span class="ref">16</span>. Bar length is the share of use lost, from none to all. No district store.</p>
+  </article>
 </section>
-{% endif %}
 
 <section>
-  <h2>The journey</h2>
-  <div class="journey">
-    <article>
-      <p class="eyebrow">Before</p>
-      <h3>Before planting</h3>
-      <p>Before planting: Table <span class="ref">21</span> seed, national only. No soil test. No variety name.</p>
-    </article>
-    <article>
-      <p class="eyebrow">Field</p>
-      <h3>In the field</h3>
-      <p>Table <span class="ref">13</span> and Table <span class="ref">14</span>. Maize also has <span class="ref">PSTA 5</span> and <span class="ref">2019</span>–<span class="ref">2026</span>.</p>
-    </article>
-    <article>
-      <p class="eyebrow">After</p>
-      <h3>After harvest</h3>
-      <p>Table <span class="ref">16</span>, national. No district store.</p>
-    </article>
+  <h2>How the rules read the districts</h2>
+  <div class="mix" aria-hidden="true">
+    {% for label, key, count in board.counts %}<span class="mix-seg action-{{ key }}" style="flex-grow: {{ count.value }}"></span>{% endfor %}
   </div>
+  <ul class="mix-key">
+    {% for label, key, count in board.counts %}
+    <li><span class="swatch action-{{ key }}"></span><span>{{ label }} {% stat count %}</span></li>
+    {% endfor %}
+  </ul>
+  <p class="legend-line">Bar length is each group's share of the districts. {% stat board.above_count %} at or above the later maize milestone. Open the <a href="{% url 'overview' %}">district map</a> for irrigation, seed, and fertilizer. Those tables count every crop together.</p>
 </section>
 
 {% for family in families %}
