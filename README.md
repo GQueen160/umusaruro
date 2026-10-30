@@ -12,6 +12,12 @@ A number on the screen is a number from a published table. If the table left a c
 
 A farmer and an agricultural officer need the survey figure for their own place, not a national average pasted onto the map. The reports are long, and they are not written as a next step for one village or one district. This system turns those published cells into a short reading: what was harvested here, and whether small farms in this district irrigate or use improved seed and fertilizer less than the large farms beside them.
 
+## What data it uses
+
+The harvest, water, seed, and fertilizer numbers are the Seasonal Agricultural Survey of the National Institute of Statistics of Rwanda, from 2019 through Season B 2026. The workbooks are in `data/raw/sas/`. Each workbook's download link and publication page are in `data/raw/MANIFEST.csv`. The survey collection is the [Seasonal Agricultural Survey](https://statistics.gov.rw/data-sources/surveys/Seasonal-Agricultural-Survey).
+
+Village, cell, sector, and district names are the NISR Village Boundary 2022 layer, saved in `data/reference/`. Season A 2026 rain is CHIRPS, in `data/chirps/`, from [CHIRPS](https://www.chc.ucsb.edu/data/chirps). District outlines are in `data/boundaries/`, from [geoBoundaries](https://www.geoboundaries.org/). The maize country goal is the PSTA 5 milestone, from the [abridged results framework](https://www.minagri.gov.rw/fileadmin/user_upload/Minagri/Publications/Policies_and_strategies/PSTA_5_Abridged_version_Final.pdf).
+
 ## Who it is for
 
 - A mini farm, with one small plot. Find the village, pick the crop, read the cards, and save a yield to aim for. The aim is the district harvest.
@@ -33,6 +39,8 @@ export DJANGO_DEBUG=1
 ```
 
 Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/). The first screen asks who is reading.
+
+The public app is [https://umusaruro-production.up.railway.app/](https://umusaruro-production.up.railway.app/).
 
 On Railway this is two services. Add a Postgres database, and connect its `DATABASE_URL` to the web service. The web service is Django: the pages, the map, and the advice. There is no third frontend service, because those pages are drawn by Django. The start command is in `railway.toml` and uses Gunicorn, not the development server.
 
