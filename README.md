@@ -6,6 +6,8 @@ The survey already printed the harvest for each district. What a farmer or an of
 
 **Start here:** [umusaruro-production.up.railway.app](https://umusaruro-production.up.railway.app/)
 
+**Watch the walkthrough:** [youtu.be/yb2rIsC4QRI](https://youtu.be/yb2rIsC4QRI)
+
 The first screen asks who is reading. You can follow the whole visit in English, French, or Kinyarwanda.
 
 ## What this solves
