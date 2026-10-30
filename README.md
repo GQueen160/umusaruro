@@ -2,33 +2,43 @@
 
 Umusaruro is the Kinyarwanda word for harvest.
 
-## What this system is
+The survey already printed the harvest for each district. What a farmer or an officer still has to do is find their own figure inside a long national report. Umusaruro does that search. You say who you are, you find the place, you pick the crop, and the screen shows the harvest for that district, with a short reading on water, seed, and fertilizer.
 
-Umusaruro is a map for one growing season in Rwanda. You say who you are, find the place, and pick the crop. The screen then shows what the national survey printed for that district: the harvest, and a short note on water, seed, and fertilizer. You can read it in English, French, or Kinyarwanda.
+**Start here:** [umusaruro-production.up.railway.app](https://umusaruro-production.up.railway.app/)
 
-A number on the screen is a number from a published table. If the table left a cell blank, the screen leaves it blank.
+The first screen asks who is reading. You can follow the whole visit in English, French, or Kinyarwanda.
 
-## What problem it is tackling
+## What this solves
 
-A farmer and an agricultural officer need the survey figure for their own place, not a national average pasted onto the map. The reports are long, and they are not written as a next step for one village or one district. This system turns those published cells into a short reading: what was harvested here, and whether small farms in this district irrigate or use improved seed and fertilizer less than the large farms beside them.
+A national table answers a national question. The person in front of it is asking a local one: what was harvested here, and do the small farms in this district irrigate, or use improved seed and fertilizer, less than the large farms beside them. Umusaruro keeps the published cell and speaks it to that person.
 
-## What data it uses
+- A mini farm finds the village, picks the crop, reads the cards, and saves a yield to aim for. The aim is the district harvest.
+- A large farm walks the same field. The aim is the large-farm harvest when the survey printed it.
+- A sector officer finds the sector, then reads that district. The survey has no sector table, so the figures stay the district's, and the screen says so.
+- A district officer sees the 30 districts, and the action the rules name for each one.
+- A planner at the Ministry of Agriculture reads every crop, then the district map for water, seed, and fertilizer.
+
+Every number on the screen comes from a published table. A blank cell stays blank.
+
+## How you move through it
+
+1. Choose who is reading.
+2. Find the place. Search a village, tap the map, or walk from district to sector, cell, and village.
+3. Pick the crop.
+4. Read the harvest, and the note on water, seed, and fertilizer.
+5. A farmer saves the aim and keeps a plan for the season. A district or sector officer sees only the place they chose.
+
+The chat on the same screen answers a question about a village, a district, or a crop, using those same published figures, in the same three languages.
+
+## Where the numbers come from
 
 The harvest, water, seed, and fertilizer numbers are the Seasonal Agricultural Survey of the National Institute of Statistics of Rwanda, from 2019 through Season B 2026. The workbooks are in `data/raw/sas/`. Each workbook's download link and publication page are in `data/raw/MANIFEST.csv`. The survey collection is the [Seasonal Agricultural Survey](https://statistics.gov.rw/data-sources/surveys/Seasonal-Agricultural-Survey).
 
 Village, cell, sector, and district names are the NISR Village Boundary 2022 layer, saved in `data/reference/`. Season A 2026 rain is CHIRPS, in `data/chirps/`, from [CHIRPS](https://www.chc.ucsb.edu/data/chirps). District outlines are in `data/boundaries/`, from [geoBoundaries](https://www.geoboundaries.org/). The maize country goal is the PSTA 5 milestone, from the [abridged results framework](https://www.minagri.gov.rw/fileadmin/user_upload/Minagri/Publications/Policies_and_strategies/PSTA_5_Abridged_version_Final.pdf).
 
-## Who it is for
+## Run it yourself
 
-- A mini farm, with one small plot. Find the village, pick the crop, read the cards, and save a yield to aim for. The aim is the district harvest.
-- A large farm. The same field. The aim is the large-farm harvest when the survey printed it.
-- A sector agricultural officer. Find the sector on the map, then open that district. The survey is not printed per sector.
-- A district agricultural officer. See the 30 districts, and the action the rules name for each one.
-- A planner at the Ministry of Agriculture. Read every crop, then the district map for water, seed, and fertilizer.
-
-## How to start it
-
-From this folder:
+The public app above is the same visit. To run it on your own machine, from this folder:
 
 ```bash
 python3 -m venv .venv
@@ -39,9 +49,3 @@ export DJANGO_DEBUG=1
 ```
 
 Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/). The first screen asks who is reading.
-
-The public app is [https://umusaruro-production.up.railway.app/](https://umusaruro-production.up.railway.app/).
-
-On Railway this is two services. Add a Postgres database, and connect its `DATABASE_URL` to the web service. The web service is Django: the pages, the map, and the advice. There is no third frontend service, because those pages are drawn by Django. The start command is in `railway.toml` and uses Gunicorn, not the development server.
-
-Video demo: [YouTube channel](https://www.youtube.com/@umusarurotv1228).
