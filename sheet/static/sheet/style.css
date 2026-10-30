@@ -267,14 +267,31 @@ footer { border-top: 1px solid var(--line); padding: 1rem 1.25rem 2rem; color: v
 .bar.lsf { background: var(--accent); opacity: 0.45; }
 .bar.ssf { background: var(--ssf); height: 5px; top: 3.5px; }
 .bar.all { background: var(--leaf); }
+.bar.other { background: var(--irrigation); opacity: 1; }
 .swatch.ssf { background: var(--ssf); }
+.swatch.leaf { background: var(--leaf); }
+.swatch.needle { width: 3px; background: #f4f7f2; border-radius: 1px; }
+.swatch.needle.late { background: var(--accent); }
 .swatch.lsf { background: var(--accent); }
-.meter { display: block; height: 6px; border-radius: 999px; background: rgba(255,255,255,0.08); margin: 0.35rem 0; }
+.meter { display: block; height: 10px; border-radius: 999px; background: rgba(255,255,255,0.08); margin: 0.45rem 0 0.2rem; }
+.picture { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.picture article {
+  background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 0.85rem 0.95rem;
+}
+.picture h2 { margin-top: 0; }
+.bullet { position: relative; height: 18px; margin: 0.7rem 0 0.45rem; border-radius: 999px; background: rgba(255,255,255,0.08); }
+.bullet-bar { position: absolute; left: 0; top: 0; bottom: 0; border-radius: inherit; background: var(--leaf); }
+.needle { position: absolute; top: -5px; bottom: -5px; width: 2px; margin-left: -1px; background: #f4f7f2; }
+.needle.late { background: var(--accent); width: 3px; }
+.mix-key { list-style: none; display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; padding: 0; margin: 0.55rem 0; }
+.mix-key li { display: flex; align-items: center; gap: 0.4rem; }
+.journey .yield-row span, .picture .yield-row span { font-size: 0.82rem; color: var(--muted); }
+.kpi { margin: 0.15rem 0 0.55rem; font-size: 1.35rem; font-weight: 700; letter-spacing: -0.03em; }
 .meter span { display: block; height: 100%; border-radius: inherit; background: var(--leaf); }
 .yield-num { font-size: 0.82rem; }
 
 @media (max-width: 860px) {
-  .map-block, .kpis, .who, .journey { grid-template-columns: 1fr; }
+  .map-block, .kpis, .who, .journey, .picture { grid-template-columns: 1fr; }
   h1 { font-size: 1.7rem; }
   .region-label { display: none; }
   .bar-row, .yield-row { grid-template-columns: 5.5rem 1fr auto; }

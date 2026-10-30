@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from functools import lru_cache
 
-from sheet.sheet import cell_stat, data, districts, slug
+from sheet.sheet import MILESTONES, bar_width, cell_stat, data, districts, overview, slug
 from sheet.stats import Stat, sas_a
 
 NATIONAL = "National"
@@ -151,6 +151,10 @@ def _built() -> dict[str, dict]:
             "sold": _percent(cells, "16", crop.use_key, "sold") if crop.use_key else None,
             "stored": _percent(cells, "16", crop.use_key, "stored") if crop.use_key else None,
         }
+        page = pages[crop.key]
+        for key in ("seed", "loss", "sold", "stored"):
+            stat = page[key]
+            page[key + "_width"] = bar_width(None if stat is None else stat.value, Decimal(100))
     return pages
 
 
@@ -184,4 +188,49 @@ def home() -> dict:
                 for crop in family.crops
             ],
         })
-    return {"families": families, "crop_count": _crop_count(len(CROPS))}
+    return {
+        "families": families,
+        "crop_count": _crop_count(len(CROPS)),
+        "board": _board(pages, overview()),
+    }
+
+
+def _named(pages, key: str) -> list[dict]:
+    rows = []
+    for crop in CROPS.values():
+        stat = pages[crop.key][key]
+        if stat is None or stat.value is None:
+            continue
+        rows.append({
+            "en": crop.en,
+            "rw": crop.rw,
+            "stat": stat,
+            "width": pages[crop.key][key + "_width"],
+        })
+    rows.sort(key=lambda row: row["stat"].value, reverse=True)
+    return rows
+
+
+def _board(pages, country) -> dict:
+    maize = pages["maize"]["national"]
+    early_kg = MILESTONES[0][1] * 1000
+    late_kg = MILESTONES[1][1] * 1000
+    peak = max(value for value in (maize.value, early_kg, late_kg) if value is not None)
+    marks = []
+    for index, (column, _tonnes) in enumerate(MILESTONES):
+        kg = early_kg if index == 0 else late_kg
+        marks.append({
+            "column": column,
+            "stat": country["milestones"][index],
+            "width": bar_width(kg, peak),
+            "late": index == 1,
+        })
+    return {
+        "maize": maize,
+        "maize_width": bar_width(maize.value, peak),
+        "marks": marks,
+        "seeds": _named(pages, "seed"),
+        "losses": _named(pages, "loss"),
+        "counts": country["counts"],
+        "above_count": country["above_count"],
+    }

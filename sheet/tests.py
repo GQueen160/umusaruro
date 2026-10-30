@@ -135,6 +135,22 @@ class PageTests(SimpleTestCase):
     def test_unknown_crop_is_404(self):
         self.assertEqual(self.client.get("/advisor/coffee/").status_code, 404)
 
+    def test_the_dashboard_scales_maize_against_the_milestone(self):
+        nyagatare = sheet.picture(sheet.district_sheet("Nyagatare"))
+        self.assertEqual(nyagatare["maize"], 100)
+        self.assertLess(nyagatare["late"], nyagatare["maize"])
+        self.assertLess(nyagatare["early"], nyagatare["late"])
+        board = __import__("sheet.advisor", fromlist=["home"]).home()["board"]
+        self.assertLess(board["maize_width"], board["marks"][0]["width"])
+        self.assertLess(board["marks"][0]["width"], board["marks"][1]["width"])
+        html = self.client.get(reverse("advisor")).content.decode()
+        self.assertIn('class="bullet"', html)
+        self.assertIn("Before planting", html)
+        self.assertEqual(sheet.bar_width(Decimal("9.9"), Decimal(100)), 9.9)
+        self.assertEqual(sheet.bar_width(Decimal("0.5"), Decimal(100)), 0.5)
+        self.assertEqual(sheet.bar_width(None, Decimal(100)), 0)
+        self.assertEqual(sheet.bar_width(Decimal(0), Decimal(100)), 0)
+
     def test_advisor_is_arranged_by_crop(self):
         html = self.client.get(reverse("advisor")).content.decode()
         self.assertNotIn("maize action sheet", html.lower())

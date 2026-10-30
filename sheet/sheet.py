@@ -9,7 +9,7 @@ come from Season A only; Season B is read beside it as a check.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from functools import lru_cache
 
 from umusaruro import cells as cell_file
@@ -419,6 +419,36 @@ def district_sheet(name: str) -> DistrictSheet:
     )
 
 
+def picture(s: DistrictSheet) -> dict:
+    """Bar lengths for the district dashboard. The cited numbers stay in the template."""
+    late = MILESTONES[1][1] * 1000
+    early = MILESTONES[0][1] * 1000
+    peak = max(value for value in (s.maize_kg.value, late, early) if value is not None)
+    rain_peak = max(s.rain_total.value, s.rain_median.value)
+    levers = {lever.key: lever for lever in s.levers}
+    hundred = Decimal(100)
+    season = []
+    for row in s.season_b:
+        small = levers[row.key].small.value
+        other = None if row.small is None else row.small.value
+        season.append({
+            "label": row.label,
+            "show": not row.withheld and small is not None and other is not None,
+            "a": bar_width(small, hundred),
+            "b": bar_width(other, hundred),
+            "a_stat": levers[row.key].small,
+            "b_stat": row.small,
+        })
+    return {
+        "maize": bar_width(s.maize_kg.value, peak),
+        "early": bar_width(early, peak),
+        "late": bar_width(late, peak),
+        "rain": bar_width(s.rain_total.value, rain_peak),
+        "median": bar_width(s.rain_median.value, rain_peak),
+        "season": season,
+    }
+
+
 def by_slug(value: str) -> str | None:
     return {slug(name): name for name in districts()}.get(value)
 
@@ -454,6 +484,24 @@ class Layer:
     title: list
     items: list[LayerItem]
     note: list
+
+
+def bar_width(value: Decimal | None, peak: Decimal | None) -> int | float:
+    """How far a bar reaches on a 0–100 track.
+
+    The length is the value divided by the scale. Zero stays zero. A blank
+    stays 0 so the template can leave the bar out. Nothing is stretched to
+    a minimum length.
+    """
+    if value is None or peak is None or peak <= 0 or value <= 0:
+        return 0
+    ratio = (Decimal(value) / Decimal(peak)) * Decimal(100)
+    if ratio > 100:
+        ratio = Decimal(100)
+    shown = ratio.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    if shown == shown.to_integral():
+        return int(shown)
+    return float(shown)
 
 
 def milestone_band(maize_kg: Decimal | None) -> str:

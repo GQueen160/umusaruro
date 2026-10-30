@@ -2,10 +2,15 @@
 {% load stats %}
 {% block title %}{{ s.name }}: Umusaruro{% endblock %}
 {% block content %}
+{% if scoped %}
+<nav class="crumbs">{{ s.name }}</nav>
+{% else %}
 <nav class="crumbs"><a href="{% url 'overview' %}">All districts</a> / {{ s.name }}</nav>
+{% endif %}
 <h1>{{ s.name }}</h1>
 
 {% include "sheet/parts/action.html" %}
+{% include "sheet/parts/picture.html" %}
 {% include "sheet/parts/maize.html" %}
 {% include "sheet/parts/trend.html" with levers=True %}
 
@@ -44,6 +49,14 @@
     to it here, without the rainfall gate. It does not change the action, which comes from Season A only.
     <a href="{% url 'method' %}#season-b">How Season B is read</a>.</p>
   {% if s.season_b_note %}<p class="b-note">{% parts s.season_b_note %}</p>{% endif %}
+  <div class="yield-chart">
+    {% for mark in g.season %}{% if mark.show %}
+    <p class="bar-name">{{ mark.label }}</p>
+    <div class="yield-row"><span>Season A</span><div class="bar-track"><span class="bar all" style="width: {{ mark.a }}%"></span></div><span class="yield-num">{% stat mark.a_stat compact=True %}</span></div>
+    <div class="yield-row"><span>Season B</span><div class="bar-track"><span class="bar other" style="width: {{ mark.b }}%"></span></div><span class="yield-num">{% stat mark.b_stat compact=True %}</span></div>
+    {% endif %}{% endfor %}
+  </div>
+  <p class="legend-line">Bar length is the percentage of smallholders, from none to all. A withheld row is not drawn. The table has large farms and the gaps.</p>
   <div class="table-wrap">
   <table class="levers">
     <thead>
@@ -75,10 +88,8 @@
 
 <section>
   <h2>Rainfall gate</h2>
-  <p>September to February rainfall in {{ s.name }} was {% stat s.rain_total %}, the mean over {% stat s.rain_cells %}
-    whose centres fall inside the district. The median of the districts is {% stat s.rain_median %}, so {{ s.name }} is
-    {% if s.rain_below %}<strong>below</strong>{% else %}<strong>above</strong>{% endif %} the median.
-    Rainfall only decides whether irrigation can be named first. It never replaces a survey cell.</p>
+  <p>The bars above use the mean of {% stat s.rain_cells %} whose centres fall inside {{ s.name }}.
+    Rainfall never replaces a survey cell.</p>
 </section>
 
 <section class="checked">
@@ -86,7 +97,9 @@
   <p>{% stat s.checked %} of {% stat s.shown %} on this page have been checked by a second person against the printed table.</p>
 </section>
 
+{% if not scoped %}
 <nav class="others" aria-label="Other districts">
   {% for name in districts %}<a href="{% url 'district' name|lower %}"{% if name == s.name %} aria-current="page"{% endif %}>{{ name }}</a>{% endfor %}
 </nav>
+{% endif %}
 {% endblock %}

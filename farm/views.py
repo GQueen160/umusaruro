@@ -1,13 +1,16 @@
 import json
 from decimal import Decimal, InvalidOperation
 
+from datetime import date
+
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET, require_POST
 
-from farm.advice import advise, crop_list
+from farm.advice import advise, crop_list, sector_board
+from farm.plan import country_rates, domestic_brief, holding_routine, journey_calendar, mark_check, mark_count
 from farm.models import FieldPlan
-from farm.role import READERS, by_group, current, known
+from farm.role import READERS, by_group, current, known, office
 from umusaruro.lang import LANGS, safe_next, text
 from farm.places import (
     BOUNDARIES,
@@ -17,15 +20,34 @@ from farm.places import (
     districts,
     locate,
     search,
+    sector_place,
     sectors,
     villages_in,
 )
 from farm.talk import hear
 
 
+def _place_gate(request, role, district=""):
+    picked = district if district_place(district) else ""
+    return render(request, "farm/home.html", {
+        "crops": crop_list(),
+        "gate": True,
+        "place_for": role,
+        "districts": districts(),
+        "picked_district": picked,
+        "sectors": sectors(picked) if role == "sector" and picked else [],
+        "farmers": by_group("farmer"),
+        "planners": by_group("planner"),
+    })
+
+
 def entrance(request):
     found = current(request)
     if found is not None:
+        if found["id"] in {"district", "sector"} and office(request) is None:
+            return _place_gate(request, found["id"])
+        if found["id"] == "district":
+            return redirect("district", slug=office(request)["district"].lower())
         return redirect(found["home"])
     return render(request, "farm/home.html", {
         "crops": crop_list(),
@@ -36,7 +58,15 @@ def entrance(request):
 
 
 def field(request):
-    if current(request) is None:
+    found = current(request)
+    if found is None:
+        return redirect("entrance")
+    if found["id"] == "district":
+        bound = office(request)
+        if bound is None:
+            return redirect("entrance")
+        return redirect("district", slug=bound["district"].lower())
+    if found["id"] == "sector" and office(request) is None:
         return redirect("entrance")
     return render(request, "farm/home.html", {"crops": crop_list(), "gate": False})
 
@@ -46,13 +76,39 @@ def choose_role(request):
     role = known(request.POST.get("role"))
     if role is None:
         return redirect("entrance")
+    if role not in {"district", "sector"}:
+        request.session["reader"] = role
+        request.session.pop("office", None)
+        return redirect(READERS[role]["home"])
     request.session["reader"] = role
-    return redirect(READERS[role]["home"])
+    district_name = (request.POST.get("district") or "").strip()
+    if district_place(district_name) is None:
+        request.session.pop("office", None)
+        return _place_gate(request, role)
+    if role == "district":
+        request.session["office"] = {"district": district_name}
+        return redirect("district", slug=district_name.lower())
+    if request.POST.get("step") != "open":
+        request.session.pop("office", None)
+        return _place_gate(request, role, district_name)
+    chosen = sector_place((request.POST.get("sector_id") or "").strip())
+    if chosen is None or chosen["district"] != district_name:
+        request.session.pop("office", None)
+        return _place_gate(request, role, district_name)
+    request.session["office"] = {
+        "district": district_name,
+        "sector": chosen["sector"],
+        "sector_id": chosen["sector_id"],
+        "lat": chosen["lat"],
+        "lon": chosen["lon"],
+    }
+    return redirect("field")
 
 
 @require_POST
 def clear_role(request):
     request.session.pop("reader", None)
+    request.session.pop("office", None)
     return redirect("entrance")
 
 
@@ -111,7 +167,39 @@ def advice_view(request):
     place = district_place(district)
     if place is None:
         return JsonResponse({"error": text(request, "unknown_district")}, status=404)
-    return JsonResponse({"advice": advise(district, [str(crop) for crop in crops], reader=_reader(request, body))})
+    reader = _reader(request, body)
+    bound = office(request)
+    if bound and reader in {"district", "sector"}:
+        district = bound["district"]
+    advice = advise(district, [str(crop) for crop in crops], reader=reader)
+    known = advice["crops"]
+    if reader == "farmer-domestic":
+        advice["domestic"] = domestic_brief(district, known)
+    elif reader in {"farmer-mini", "farmer-large"}:
+        advice["rates"] = country_rates(known)
+    elif reader == "sector":
+        advice["board"] = sector_board(district, known)
+        advice["note_en"] = f"No sector table. These bars are {district} district."
+        advice["note_fr"] = f"Pas de tableau par secteur. Ces barres sont celles du district de {district}."
+        advice["note_rw"] = f"Nta mibare y'umurenge. Imirongo ni iya karere ka {district}."
+    return JsonResponse({"advice": advice})
+
+
+@require_POST
+def routine_view(request):
+    body = _body(request)
+    reader = _reader(request, body)
+    if reader not in {"farmer-mini", "farmer-large"}:
+        return JsonResponse({"error": text(request, "need_crop")}, status=400)
+    district = (body.get("district") or "").strip()
+    crops = body.get("crops") or []
+    if not district or not isinstance(crops, list):
+        return JsonResponse({"error": text(request, "need_crop")}, status=400)
+    if district_place(district) is None:
+        return JsonResponse({"error": text(request, "unknown_district")}, status=404)
+    portions = body.get("portions") if isinstance(body.get("portions"), dict) else {}
+    routine = holding_routine(district, [str(crop) for crop in crops], body.get("unit") or "ha", body.get("farm"), portions)
+    return JsonResponse({"routine": routine})
 
 
 @require_POST
@@ -137,13 +225,19 @@ def save_plan(request):
     crops = body.get("crops") or []
     if not isinstance(crops, list) or not crops:
         return JsonResponse({"error": text(request, "need_crop_only")}, status=400)
-    try:
-        target = Decimal(str(body.get("target_kg"))).quantize(Decimal("0.1"))
-    except (InvalidOperation, TypeError):
-        return JsonResponse({"error": text(request, "bad_target")}, status=400)
+    holding = _holding(body)
+    if holding is not None:
+        crop, target = _holding_target(crops, holding)
+        if target is None:
+            return JsonResponse({"error": text(request, "bad_target")}, status=400)
+    else:
+        try:
+            target = Decimal(str(body.get("target_kg"))).quantize(Decimal("0.1"))
+        except (InvalidOperation, TypeError):
+            return JsonResponse({"error": text(request, "bad_target")}, status=400)
+        crop = str(body.get("target_crop") or crops[0])
     if target <= 0 or target > Decimal("100000"):
         return JsonResponse({"error": text(request, "rejected_target")}, status=400)
-    crop = str(body.get("target_crop") or crops[0])
     row = FieldPlan.objects.create(
         village_id=place["village_id"],
         district=place["district"],
@@ -155,8 +249,65 @@ def save_plan(request):
         crops=[str(item) for item in crops],
         target_crop=crop,
         target_kg=target,
+        holding=holding,
     )
     return JsonResponse({"plan": _plan(row)})
+
+
+@require_POST
+def check_plan(request, plan_id):
+    row = FieldPlan.objects.filter(pk=plan_id).first()
+    if row is None or not row.holding:
+        return JsonResponse({"error": text(request, "need_village")}, status=404)
+    body = _body(request)
+    item = str(body.get("item") or "")
+    if item[:1] not in {"d", "w"} or not item[1:].isdigit():
+        return JsonResponse({"error": text(request, "bad_target")}, status=400)
+    try:
+        day = date.fromisoformat(str(body.get("date") or ""))
+    except ValueError:
+        return JsonResponse({"error": text(request, "bad_target")}, status=400)
+    window = journey_calendar(row.district, row.crops, row.holding)
+    start = date.fromisoformat(window["start"])
+    end = date.fromisoformat(window["end"])
+    if day < start or day > end:
+        return JsonResponse({"error": text(request, "bad_target")}, status=400)
+    kind = "daily" if item.startswith("d") else "weekly"
+    if int(item[1:]) >= len(window[kind]):
+        return JsonResponse({"error": text(request, "bad_target")}, status=400)
+    row.checks = mark_check(row.checks, day, item, bool(body.get("on")))
+    row.save(update_fields=["checks"])
+    return JsonResponse({"plan": _plan(row)})
+
+
+def _holding(body: dict):
+    portions = body.get("portions")
+    if not isinstance(portions, dict) or not portions:
+        return None
+    unit = body.get("unit") if body.get("unit") in {"ha", "m2"} else "ha"
+    clean = {}
+    for crop, row in portions.items():
+        if not isinstance(row, dict):
+            continue
+        clean[str(crop)] = {
+            "area": str(row.get("area") or ""),
+            "target": str(row.get("target") or ""),
+        }
+    if not clean:
+        return None
+    return {"unit": unit, "farm": str(body.get("farm") or ""), "portions": clean}
+
+
+def _holding_target(crops, holding):
+    for crop in crops:
+        row = holding["portions"].get(str(crop)) or {}
+        try:
+            number = Decimal(str(row.get("target") or "").replace(",", "."))
+        except InvalidOperation:
+            continue
+        if number > 0:
+            return str(crop), number.quantize(Decimal("0.1"))
+    return None, None
 
 
 def _reader(request, body: dict) -> str:
@@ -174,7 +325,7 @@ def _body(request) -> dict:
 
 
 def _plan(row: FieldPlan) -> dict:
-    return {
+    payload = {
         "id": row.id,
         "village": row.village,
         "cell": row.cell,
@@ -185,6 +336,12 @@ def _plan(row: FieldPlan) -> dict:
         "crops": row.crops,
         "target_crop": row.target_crop,
         "target_kg": format(row.target_kg, "f").rstrip("0").rstrip("."),
+        "holding": row.holding,
+        "checks": row.checks or {"days": {}, "weeks": {}},
+        "marked": mark_count(row.checks),
         "season": row.season,
         "year": row.year,
     }
+    if row.holding:
+        payload["journey"] = journey_calendar(row.district, row.crops, row.holding)
+    return payload

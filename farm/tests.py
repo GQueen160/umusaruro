@@ -2,7 +2,10 @@ from decimal import Decimal
 
 from django.test import TestCase
 
+import re
+
 from farm.advice import advise
+from farm.plan import farmer_plan
 from farm.models import FieldPlan
 from farm.places import locate
 from farm.talk import hear
@@ -25,6 +28,7 @@ class PlaceTests(TestCase):
         self.assertContains(response, "id=\"map\"")
         self.assertContains(response, "id=\"search\" role=\"search\" hidden")
         self.assertContains(response, "Mini farm")
+        self.assertContains(response, "Domestic")
         self.assertContains(response, "Sector agricultural officer")
 
 
@@ -62,6 +66,57 @@ class AdviceTests(TestCase):
         self.assertIn("izina ry'imbuto", lead)
 
 
+_ANSWERS = {"seed": "improved", "water": "add", "purpose": "both"}
+
+
+def _lines(plan, *keys):
+    return " ".join(line["en"] for key in keys for line in plan[key])
+
+
+class PlanTests(TestCase):
+    def test_the_plan_names_the_aim_the_country_and_the_day(self):
+        plan = farmer_plan("Nyagatare", ["maize"], "farmer-mini", {
+            "seed": "saved", "water": "add", "purpose": "both",
+        })
+        text = _lines(plan, "goals", "seed", "daily", "weekly")
+        self.assertIn("2,887", text)
+        self.assertIn("2,260", text)
+        self.assertIn("not the harvest of Nyagatare", text)
+        self.assertIn("traditional seed", text)
+        self.assertIn("does not name a variety", text)
+        self.assertIn("64.3%", text)
+        self.assertIn("press a finger", text)
+        self.assertIn("Do not stir a spoon", text)
+        self.assertIn("pull weeds", text.lower())
+        self.assertIsNone(re.search(r"\d+(\.\d+)?\s*(L|litres|ml)\b", text))
+        self.assertIsNone(farmer_plan("Nyagatare", ["maize"], "farmer-mini", {"seed": "improved"}))
+
+    def test_a_blank_crop_does_not_become_a_national_aim(self):
+        plan = farmer_plan("Nyarugenge", ["sorghum"], "farmer-mini", _ANSWERS)
+        goals = _lines(plan, "goals")
+        self.assertIn("not printed", goals)
+        self.assertIn("not zero", goals)
+        self.assertNotIn("Your aim", goals)
+        self.assertIn("Do not start", plan["daily"][0]["en"])
+
+    def test_rain_only_does_not_invent_a_daily_litre(self):
+        plan = farmer_plan("Nyagatare", ["maize"], "farmer-large", {
+            "seed": "unset", "water": "rain", "purpose": "food",
+        })
+        self.assertIn("5,292", _lines(plan, "goals"))
+        self.assertIn("rain only", _lines(plan, "daily").lower())
+        self.assertIn("food at home", _lines(plan, "weekly").lower())
+
+    def test_beans_keep_the_two_seed_figures_apart(self):
+        plan = farmer_plan("Nyagatare", ["beans"], "farmer-mini", _ANSWERS)
+        text = _lines(plan, "seed")
+        self.assertIn("bush bean", text)
+        self.assertIn("climbing bean", text)
+        self.assertIn("0.5%", text)
+        self.assertIn("0.2%", text)
+        self.assertNotIn("variety name is", text)
+
+
 class VoiceTests(TestCase):
     def test_a_district_name_is_the_district(self):
         heard = hear("nhinge ibigori i nyagatare")
@@ -84,9 +139,14 @@ class ReaderTests(TestCase):
     def test_a_mini_farm_opens_the_field(self):
         response = self.client.post("/role/", {"role": "farmer-mini"}, follow=True)
         self.assertEqual(response.request["PATH_INFO"], "/field/")
-        self.assertContains(response, "Tap the map where you will plant.")
-        self.assertContains(response, "Aim at the district harvest.")
+        self.assertContains(response, "Select the village where you will plant.")
         self.assertContains(response, "Mini farm")
+        self.assertContains(response, 'id="crops" hidden')
+        self.assertContains(response, "How big is the farm?")
+        self.assertContains(response, "On what scale, in {unit}, will you plant {name}?")
+        self.assertContains(response, "Country goal on the farm")
+        self.assertContains(response, "max on this land: {kg} kg.")
+        self.assertContains(response, "You are exceeding the size of the farm.")
         self.assertNotContains(response, 'role="dialog"')
         self.assertNotContains(response, "Ibihingwa byose")
 
@@ -107,6 +167,64 @@ class ReaderTests(TestCase):
             content_type="application/json",
         )
         self.assertEqual(response.json()["advice"]["target"]["kg"], "2887")
+        self.assertIsNone(response.json()["advice"].get("plan"))
+        maize = response.json()["advice"]["rates"][0]
+        self.assertEqual(maize["crop"], "maize")
+        self.assertEqual(maize["kind"], "goal")
+        self.assertEqual(maize["kg_ha"], "2260")
+
+    def test_the_country_goal_scales_to_the_portion(self):
+        from decimal import Decimal
+
+        from farm.plan import portion_kg
+
+        self.assertEqual(portion_kg(Decimal("2260"), Decimal("0.5"), "ha"), 1130)
+        self.assertEqual(portion_kg(Decimal("2260"), Decimal("2000"), "m2"), 452)
+
+    def test_a_dry_field_turns_missed_rain_into_litres(self):
+        from farm.plan import holding_routine
+
+        routine = holding_routine("Nyagatare", ["maize"], "ha", "5", {
+            "maize": {"area": "5", "target": "20000"},
+        })
+        daily = routine["daily"][0]["en"]
+        self.assertIn("35,787 litres", daily)
+        self.assertIn("6,477,500 litres", daily)
+        self.assertIn("129.55 mm", daily)
+        self.assertNotIn("spoon", daily.lower())
+        weekly = " ".join(line["en"] for line in routine["weekly"])
+        self.assertIn("773 kg", weekly)
+        self.assertIn("weed the whole 5 hectares", weekly)
+        self.assertIn("11,300 kg", routine["summary"][1]["en"])
+
+    def test_a_wet_field_adds_no_extra_litres(self):
+        from farm.plan import holding_routine
+
+        routine = holding_routine("Gisagara", ["beans"], "ha", "1", {
+            "beans": {"area": "1", "target": "700"},
+        })
+        daily = routine["daily"][0]["en"]
+        self.assertIn("add no extra litres", daily)
+        self.assertIn("7,560,000 litres", daily)
+
+    def test_a_domestic_note_names_the_rain_and_no_breed(self):
+        self.client.post("/role/", {"role": "farmer-domestic"}, follow=True)
+        response = self.client.post(
+            "/api/advice/",
+            data={"district": "Nyagatare", "crops": ["maize"]},
+            content_type="application/json",
+        )
+        lines = " ".join(line["en"] for line in response.json()["advice"]["domestic"]["lines"])
+        self.assertIn("Nyagatare", lines)
+        self.assertIn("mm", lines)
+        self.assertIn("No soil type", lines)
+        self.assertIn("No breed", lines)
+        lowered = lines.lower()
+        for banned in ("clay", "loam", "sand", "ferral", "rhm"):
+            self.assertNotIn(banned, lowered)
+        page = self.client.get("/field/")
+        self.assertContains(page, "Select the village where you will plant.")
+        self.assertContains(page, "Domestic")
 
     def test_ministry_opens_the_crop_advisor(self):
         response = self.client.post("/role/", {"role": "ministry"}, follow=True)
@@ -115,22 +233,86 @@ class ReaderTests(TestCase):
         self.assertContains(response, "Country tables.")
         self.assertNotContains(response, "Farmer map")
 
-    def test_a_district_officer_opens_the_district_map(self):
-        response = self.client.post("/role/", {"role": "district"}, follow=True)
-        self.assertEqual(response.request["PATH_INFO"], "/sheet/")
-        self.assertContains(response, "District agricultural officer")
-        self.assertContains(response, "Click a district.")
+    def test_a_district_officer_stays_in_one_district(self):
+        chooser = self.client.post("/role/", {"role": "district"})
+        self.assertContains(chooser, "Which district do you read?")
+        self.assertContains(chooser, "District agricultural officer")
+        response = self.client.post(
+            "/role/", {"role": "district", "district": "Nyagatare"}, follow=True,
+        )
+        self.assertEqual(response.request["PATH_INFO"], "/district/nyagatare/")
+        self.assertContains(response, "Your district only.")
+        self.assertNotContains(response, 'href="/district/gasabo/"')
         self.assertNotContains(response, "Farmer map")
         self.assertNotContains(response, "No sector table")
+        other = self.client.get("/district/gasabo/", follow=True)
+        self.assertEqual(other.request["PATH_INFO"], "/district/nyagatare/")
+        overview = self.client.get("/sheet/", follow=True)
+        self.assertEqual(overview.request["PATH_INFO"], "/district/nyagatare/")
+        self.client.post("/role/clear/")
+        open_again = self.client.get("/district/gasabo/")
+        self.assertContains(open_again, 'href="/district/nyagatare/"')
 
-    def test_a_sector_officer_finds_the_sector_then_its_district(self):
-        response = self.client.post("/role/", {"role": "sector"}, follow=True)
-        self.assertEqual(response.request["PATH_INFO"], "/field/")
-        self.assertContains(response, "Find your sector")
-        self.assertContains(response, "No sector table")
-        self.assertContains(response, "Sector agricultural officer")
-        self.assertNotContains(response, 'id="target"')
-        self.assertNotContains(response, "Ibihingwa byose")
+    def test_a_sector_officer_stays_in_one_sector(self):
+        from farm.places import sectors
+
+        chooser = self.client.post("/role/", {"role": "sector"})
+        self.assertContains(chooser, "Which sector do you read?")
+        self.assertContains(chooser, "Sector agricultural officer")
+        listed = self.client.post("/role/", {
+            "role": "sector", "district": "Kicukiro", "step": "list",
+        })
+        row = next(item for item in sectors("Kicukiro") if item["name"] == "Gahanga")
+        self.assertContains(listed, "Gahanga")
+        opened = self.client.post("/role/", {
+            "role": "sector",
+            "district": "Kicukiro",
+            "sector_id": row["id"],
+            "step": "open",
+        }, follow=True)
+        self.assertEqual(opened.request["PATH_INFO"], "/field/")
+        self.assertContains(opened, "Gahanga")
+        self.assertContains(opened, "No sector table")
+        self.assertNotContains(opened, 'id="pick-district"')
+        self.assertNotContains(opened, 'id="target"')
+        self.assertNotContains(opened, "Ibihingwa byose")
+        other = self.client.get("/district/nyagatare/", follow=True)
+        self.assertEqual(other.request["PATH_INFO"], "/field/")
+        own = self.client.get("/district/kicukiro/")
+        self.assertEqual(own.status_code, 200)
+        self.assertNotContains(own, 'href="/district/gasabo/"')
+        moved = self.client.post(
+            "/api/advice/",
+            data={"district": "Nyagatare", "crops": ["maize"]},
+            content_type="application/json",
+        )
+        self.assertIn("Kicukiro", moved.json()["advice"]["note_en"])
+
+    def test_a_sector_board_draws_the_district(self):
+        from farm.advice import sector_board
+        from sheet.sheet import bar_width
+
+        board = sector_board("Nyagatare", ["maize"])
+        self.assertEqual(board["action"], "irrigation")
+        kinds = [row["kind"] for row in board["rows"]]
+        self.assertIn("water", kinds)
+        self.assertIn("rain", kinds)
+        self.assertIn("maize", kinds)
+        maize = next(row for row in board["rows"] if row["kind"] == "maize")
+        self.assertEqual(maize["bars"][0]["label_en"], "District")
+        self.assertGreater(maize["bars"][0]["width"], 0)
+        self.assertTrue(maize["bars"][0]["url"].startswith("https://"))
+        water = next(row for row in sector_board("Kicukiro", [])["rows"] if row["kind"] == "water")
+        shown = Decimal(water["bars"][0]["value"].replace(",", ""))
+        self.assertEqual(water["bars"][0]["width"], bar_width(shown, Decimal(100)))
+        self.assertEqual(water["bars"][0]["table"], "31")
+        sorghum = next(row for row in sector_board("Nyarugenge", ["sorghum"])["rows"] if row["kind"] == "sorghum")
+        self.assertTrue(sorghum["bars"][0]["blank"])
+        self.assertEqual(sorghum["bars"][0]["width"], 0)
+        for row in board["rows"]:
+            for bar in row["bars"]:
+                self.assertLessEqual(bar["width"], 100)
+                self.assertNotIn("sector", bar["label_en"].lower())
 
     def test_choosing_again_returns_to_the_map(self):
         self.client.post("/role/", {"role": "farmer-large"})
@@ -173,6 +355,79 @@ class PlanTests(TestCase):
         saved = FieldPlan.objects.get()
         self.assertEqual(saved.village, "Gihanga")
         self.assertEqual(saved.target_kg, Decimal("1800.0"))
+        self.assertIsNone(saved.holding)
+
+    def test_the_farm_plan_keeps_the_land_and_the_goal(self):
+        place = locate(30.05251, -1.94856)
+        response = self.client.post(
+            "/api/plans/save/",
+            data={
+                "village_id": place["village_id"],
+                "crops": ["paddy_rice"],
+                "unit": "ha",
+                "farm": "12",
+                "portions": {"paddy_rice": {"area": "11", "target": "31000"}},
+            },
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        saved = FieldPlan.objects.get()
+        self.assertEqual(saved.target_crop, "paddy_rice")
+        self.assertEqual(saved.target_kg, Decimal("31000.0"))
+        self.assertEqual(saved.holding["farm"], "12")
+        self.assertEqual(saved.holding["portions"]["paddy_rice"]["area"], "11")
+        self.client.post("/role/", {"role": "farmer-mini"})
+        page = self.client.get("/field/")
+        self.assertContains(page, "Save my plan")
+
+    def test_october_is_day_60_of_the_season(self):
+        from datetime import date
+
+        from farm.plan import season_window
+
+        start, end = season_window(date(2026, 10, 30), "2025-09/2026-02")
+        self.assertEqual(start.isoformat(), "2026-09-01")
+        self.assertEqual(end.isoformat(), "2027-02-28")
+        self.assertEqual((date(2026, 10, 30) - start).days + 1, 60)
+        outside, outside_end = season_window(date(2026, 5, 1), "2025-09/2026-02")
+        self.assertEqual(outside.isoformat(), "2026-05-01")
+        self.assertEqual((outside_end - outside).days + 1, 181)
+
+    def test_a_day_can_be_marked_and_cleared(self):
+        place = locate(30.05251, -1.94856)
+        saved = self.client.post(
+            "/api/plans/save/",
+            data={
+                "village_id": place["village_id"],
+                "crops": ["paddy_rice"],
+                "unit": "ha",
+                "farm": "12",
+                "portions": {"paddy_rice": {"area": "11", "target": "31000"}},
+            },
+            content_type="application/json",
+        )
+        plan = saved.json()["plan"]
+        day = plan["journey"]["today"]
+        marked = self.client.post(
+            f"/api/plans/{plan['id']}/check/",
+            data={"date": day, "item": "d0", "on": True},
+            content_type="application/json",
+        )
+        self.assertEqual(marked.status_code, 200)
+        self.assertEqual(marked.json()["plan"]["marked"], 1)
+        week = self.client.post(
+            f"/api/plans/{plan['id']}/check/",
+            data={"date": day, "item": "w0", "on": True},
+            content_type="application/json",
+        )
+        self.assertEqual(week.json()["plan"]["marked"], 2)
+        cleared = self.client.post(
+            f"/api/plans/{plan['id']}/check/",
+            data={"date": day, "item": "d0", "on": False},
+            content_type="application/json",
+        )
+        self.assertEqual(cleared.json()["plan"]["marked"], 1)
+        self.assertEqual(FieldPlan.objects.get().target_kg, Decimal("31000.0"))
 
     def test_a_target_needs_a_village(self):
         response = self.client.post(
